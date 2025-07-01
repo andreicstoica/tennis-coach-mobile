@@ -3,7 +3,8 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useAuth } from '@/lib/auth-context';
-import { trpc } from '@/lib/trpc/client';
+import { useTRPC } from '@/lib/trpc/trpc';
+import { useQuery } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { StyleSheet, TouchableOpacity } from 'react-native';
@@ -12,16 +13,21 @@ import Toast from 'react-native-toast-message';
 export default function PreviousScreen() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const trpc = useTRPC();
 
   // Only fetch practice sessions if user is authenticated
   const {
-    data: sessions,
+    data: sessionsResponse,
     isLoading,
     error,
-  } = trpc.practiceSession.list.useQuery(undefined, {
+  } = useQuery({
+    ...trpc.practiceSession.list.queryOptions(),
     enabled: !!user, // Only run query if user exists
     retry: false,
   });
+
+  // Extract the sessions array from the response
+  const sessions = sessionsResponse.json || '[]';
 
   console.log('=== PREVIOUS SCREEN DEBUG ===');
   console.log('Current user:', user?.email || 'Not authenticated');
@@ -30,6 +36,19 @@ export default function PreviousScreen() {
   console.log('Practice sessions error:', error?.message);
   console.log('Practice sessions data:', sessions?.length || 0, 'sessions');
   console.log('=== END DEBUG ===');
+
+  console.log('=== PREVIOUS SCREEN DETAILED DEBUG ===');
+  console.log('Current user object:', JSON.stringify(user, null, 2));
+  console.log('User ID:', user?.id);
+  console.log('User email:', user?.email);
+  console.log('Auth loading:', authLoading);
+  console.log('Practice sessions loading:', isLoading);
+  console.log('Practice sessions error:', error?.message);
+  console.log('Practice sessions data:', sessions);
+  console.log('Sessions type:', typeof sessions);
+  console.log('Sessions array check:', Array.isArray(sessions));
+  console.log('First session example:', JSON.stringify(sessions?.[0], null, 2));
+  console.log('=== END DETAILED DEBUG ===');
 
   if (authLoading) {
     return (
@@ -115,7 +134,7 @@ export default function PreviousScreen() {
         <ThemedText type="title">Previous Sessions</ThemedText>
       </ThemedView>
 
-      {sessions.map((session, index) => (
+      {sessions.map((session: any, index: number) => (
         <TouchableOpacity
           key={session.id}
           style={[styles.card, index % 2 === 0 ? styles.cardEven : styles.cardOdd]}
@@ -123,7 +142,7 @@ export default function PreviousScreen() {
           activeOpacity={0.7}>
           <ThemedView style={styles.cardHeader}>
             <ThemedText type="defaultSemiBold" style={styles.date}>
-              {session.createdAt?.toLocaleDateString()}
+              {new Date(session.createdAt).toLocaleDateString()}
             </ThemedText>
             <ThemedView
               style={[

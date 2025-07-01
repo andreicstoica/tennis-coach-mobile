@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { SignInForm } from '~/components/SignInForm';
 import { SignUpForm } from '~/components/SignUpForm';
 import { useAuth } from '~/lib/auth-context';
-import { testDirectAPI } from '~/lib/test-api';
 
 export default function HomeScreen() {
   const { user, isLoading, signOut, signIn } = useAuth();
@@ -31,10 +30,6 @@ export default function HomeScreen() {
 
   const handleSwitchToSignIn = () => {
     setShowSignUp(false);
-  };
-
-  const handleTestAPI = () => {
-    testDirectAPI();
   };
 
   if (isLoading) {
@@ -62,12 +57,6 @@ export default function HomeScreen() {
           <ThemedText type="defaultSemiBold" style={styles.welcomeText}>
             Successfully signed in to Courtly.
           </ThemedText>
-          <Button
-            variant="secondary"
-            onPress={handleTestAPI}
-            style={[styles.signOutButton, { marginBottom: 10 }]}>
-            <ThemedText>Test Direct API</ThemedText>
-          </Button>
           <Button variant="outline" onPress={signOut} style={styles.signOutButton}>
             <ThemedText>Sign Out</ThemedText>
           </Button>

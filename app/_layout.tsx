@@ -8,7 +8,7 @@ import * as React from 'react';
 import { Platform } from 'react-native';
 import { AuthProvider } from '~/lib/auth-context';
 import { NAV_THEME } from '~/lib/constants';
-import { TRPCProvider } from '~/lib/trpc/provider';
+import { TRPCClientProvider } from '~/lib/trpc/trpc';
 
 const LIGHT_THEME: Theme = {
   ...DefaultTheme,
@@ -47,7 +47,7 @@ export default function RootLayout() {
   }
 
   return (
-    <TRPCProvider>
+    <TRPCClientProvider>
       <AuthProvider>
         <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
           <Stack>
@@ -57,7 +57,7 @@ export default function RootLayout() {
           <StatusBar style={isDarkColorScheme ? 'light' : 'dark'} />
         </ThemeProvider>
       </AuthProvider>
-    </TRPCProvider>
+    </TRPCClientProvider>
   );
 }
 
