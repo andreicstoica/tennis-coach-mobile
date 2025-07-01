@@ -1,46 +1,35 @@
 import { useTRPC } from '@/lib/trpc/trpc';
 import { useQuery } from '@tanstack/react-query';
-import { useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { ActivityIndicator, FlatList, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '~/components/ThemedText';
 import { ThemedView } from '~/components/ThemedView';
+import { useColorScheme } from '~/hooks/useColorScheme';
 
 export default function PracticeSession() {
   const { id } = useLocalSearchParams();
+  const router = useRouter();
   const trpc = useTRPC();
   const flatListRef = useRef<FlatList>(null);
+  const { colorScheme } = useColorScheme();
 
-  // Fetch the practice session by chat ID
   const {
-    data: session,
-    isLoading: sessionLoading,
-    error: sessionError,
+    data: chat,
+    isLoading,
+    error,
   } = useQuery({
-    ...trpc.practiceSession.getByChatId.queryOptions({ chatId: id as string }),
+    ...trpc.chats.get.queryOptions({ chatId: id as string }),
     enabled: !!id,
+    retry: 1, // Limit retries for debugging
   });
 
-  // For now, we'll use mock chat messages since the actual chat API isn't implemented yet
-  const [messages, setMessages] = useState<any[]>([]);
-  const [chatLoading, setChatLoading] = useState(true);
+  // Add this log to inspect the raw chat data
+  console.log('TRPC chat response:', chat?.name);
+  console.log('Chat page id param:', id);
 
-  useEffect(() => {
-    if (session) {
-      // Mock chat messages - replace this with actual chat API call
-      const mockMessages = [
-        {
-          role: 'ai',
-          content: `Welcome back! Ready to continue your ${session.focusArea} practice?`,
-        },
-        { role: 'user', content: "Yes, let's go." },
-        { role: 'ai', content: "Great! Here's your practice plan:" },
-        { role: 'ai', content: session.plan || 'No plan available for this session.' },
-      ];
-      setMessages(mockMessages);
-      setChatLoading(false);
-    }
-  }, [session]);
+  // messages is an array of { id, role, content, ... }
+  const messages = useMemo(() => chat?.messages ?? [], [chat?.messages]);
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -48,80 +37,68 @@ export default function PracticeSession() {
     }
   }, [messages]);
 
-  if (sessionLoading) {
+  if (isLoading) {
     return (
       <ThemedView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#2563eb" />
-        <ThemedText style={{ marginTop: 16 }}>Loading session...</ThemedText>
+        <ThemedText style={{ marginTop: 16 }}>Loading chat...</ThemedText>
       </ThemedView>
     );
   }
 
-  if (sessionError) {
+  if (error || !chat) {
     return (
       <ThemedView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16 }}>
-        <ThemedText style={{ textAlign: 'center', color: '#ef4444' }}>
-          Error loading session: {sessionError.message}
+        <ThemedText style={{ textAlign: 'center', color: '#ef4444', marginBottom: 24 }}>
+          {error ? `Error loading chat: ${error.message}` : 'Chat not found'}
         </ThemedText>
-      </ThemedView>
-    );
-  }
-
-  if (!session) {
-    return (
-      <ThemedView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16 }}>
-        <ThemedText style={{ textAlign: 'center' }}>Session not found</ThemedText>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{
+            backgroundColor: colorScheme === 'dark' ? '#3b82f6' : '#2563eb',
+            paddingHorizontal: 24,
+            paddingVertical: 12,
+            borderRadius: 8,
+          }}>
+          <ThemedText style={{ color: '#ffffff', fontWeight: '600' }}>Go Back</ThemedText>
+        </TouchableOpacity>
       </ThemedView>
     );
   }
 
   return (
     <ThemedView style={{ flex: 1, padding: 16 }}>
-      {/* Session Header */}
-      <ThemedView
-        style={{
-          padding: 16,
-          marginBottom: 16,
-          borderRadius: 12,
-          backgroundColor: 'rgba(37, 99, 235, 0.1)',
-          borderWidth: 1,
-          borderColor: 'rgba(37, 99, 235, 0.2)',
-        }}>
-        <ThemedText style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 8 }}>
-          {session.focusArea.charAt(0).toUpperCase() + session.focusArea.slice(1)} Practice
-        </ThemedText>
-        <ThemedText style={{ opacity: 0.7 }}>
-          {new Date(session.createdAt).toLocaleDateString()}
-        </ThemedText>
-      </ThemedView>
-
-      {chatLoading ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#2563eb" />
-          <ThemedText style={{ marginTop: 16 }}>Loading chat...</ThemedText>
-        </View>
-      ) : (
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          keyExtractor={(_, i) => i.toString()}
-          renderItem={({ item }) => (
-            <View
+      <FlatList
+        ref={flatListRef}
+        data={messages}
+        keyExtractor={(item) => item.id?.toString() ?? Math.random().toString()}
+        renderItem={({ item }) => (
+          <View
+            style={{
+              alignSelf: item.role === 'user' ? 'flex-end' : 'flex-start',
+              backgroundColor:
+                item.role === 'user' ? (colorScheme === 'dark' ? '#f3f4f6' : '#000000') : '#374151',
+              borderRadius: 12,
+              marginVertical: 4,
+              padding: 10,
+              maxWidth: '80%',
+            }}>
+            <ThemedText
               style={{
-                alignSelf: item.role === 'user' ? 'flex-end' : 'flex-start',
-                backgroundColor: item.role === 'user' ? '#2563eb' : '#374151',
-                borderRadius: 12,
-                marginVertical: 4,
-                padding: 10,
-                maxWidth: '80%',
+                color:
+                  item.role === 'user'
+                    ? colorScheme === 'dark'
+                      ? '#000000'
+                      : '#ffffff'
+                    : '#ffffff',
               }}>
-              <ThemedText style={{ color: '#fff' }}>{item.content}</ThemedText>
-            </View>
-          )}
-          contentContainerStyle={{ paddingBottom: 16 }}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+              {item.content}
+            </ThemedText>
+          </View>
+        )}
+        contentContainerStyle={{ paddingBottom: 16 }}
+        showsVerticalScrollIndicator={false}
+      />
     </ThemedView>
   );
 }

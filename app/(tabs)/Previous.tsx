@@ -10,6 +10,21 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import Toast from 'react-native-toast-message';
 
+interface PracticeSession {
+  plan: string | null;
+  id: number | null;
+  chatId: string | null;
+  createdAt: string | null;
+  userId: string | null;
+  focusArea: string;
+}
+
+interface Plan {
+  warmup: string;
+  drill: string;
+  game: string;
+}
+
 export default function PreviousScreen() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -17,7 +32,7 @@ export default function PreviousScreen() {
 
   // Only fetch practice sessions if user is authenticated
   const {
-    data: sessionsResponse,
+    data: rawSessions,
     isLoading,
     error,
   } = useQuery({
@@ -26,29 +41,15 @@ export default function PreviousScreen() {
     retry: false,
   });
 
-  // Extract the sessions array from the response
-  const sessions = sessionsResponse.json || '[]';
+  const sessions: PracticeSession[] = Array.isArray(rawSessions)
+    ? rawSessions
+    : (((rawSessions as any)?.json ?? []) as PracticeSession[]);
 
-  console.log('=== PREVIOUS SCREEN DEBUG ===');
-  console.log('Current user:', user?.email || 'Not authenticated');
-  console.log('Auth loading:', authLoading);
-  console.log('Practice sessions loading:', isLoading);
-  console.log('Practice sessions error:', error?.message);
-  console.log('Practice sessions data:', sessions?.length || 0, 'sessions');
-  console.log('=== END DEBUG ===');
-
-  console.log('=== PREVIOUS SCREEN DETAILED DEBUG ===');
-  console.log('Current user object:', JSON.stringify(user, null, 2));
-  console.log('User ID:', user?.id);
-  console.log('User email:', user?.email);
-  console.log('Auth loading:', authLoading);
-  console.log('Practice sessions loading:', isLoading);
-  console.log('Practice sessions error:', error?.message);
-  console.log('Practice sessions data:', sessions);
+  console.log('=== start SESSIONS DETAILS ===');
   console.log('Sessions type:', typeof sessions);
   console.log('Sessions array check:', Array.isArray(sessions));
-  console.log('First session example:', JSON.stringify(sessions?.[0], null, 2));
-  console.log('=== END DETAILED DEBUG ===');
+  //console.log('Sample session: ', sessions?.[0]);
+  console.log('=== end SESSIONS DETAILS ===');
 
   if (authLoading) {
     return (
@@ -90,7 +91,7 @@ export default function PreviousScreen() {
     );
   }
 
-  const handleCardPress = (session: any) => {
+  const handleCardPress = (session: PracticeSession) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (session.chatId && typeof session.chatId === 'string' && session.chatId.length > 0) {
       router.push(`/practice/${session.chatId}`);
@@ -134,32 +135,42 @@ export default function PreviousScreen() {
         <ThemedText type="title">Previous Sessions</ThemedText>
       </ThemedView>
 
-      {sessions.map((session: any, index: number) => (
-        <TouchableOpacity
-          key={session.id}
-          style={[styles.card, index % 2 === 0 ? styles.cardEven : styles.cardOdd]}
-          onPress={() => handleCardPress(session)}
-          activeOpacity={0.7}>
-          <ThemedView style={styles.cardHeader}>
-            <ThemedText type="defaultSemiBold" style={styles.date}>
-              {new Date(session.createdAt).toLocaleDateString()}
-            </ThemedText>
-            <ThemedView
-              style={[
-                styles.focusBadge,
-                { backgroundColor: getFocusBadgeColor(session.focusArea) },
-              ]}>
-              <ThemedText style={styles.focusText}>{session.focusArea}</ThemedText>
+      {sessions.map((session: PracticeSession, index: number) => {
+        let plan: Plan | null = null;
+        try {
+          plan = session.plan ? JSON.parse(session.plan) : null;
+        } catch {
+          plan = null;
+        }
+        return (
+          <TouchableOpacity
+            key={session.id ?? index}
+            style={[styles.card, index % 2 === 0 ? styles.cardEven : styles.cardOdd]}
+            onPress={() => handleCardPress(session)}
+            activeOpacity={0.7}>
+            <ThemedView style={styles.cardHeader}>
+              <ThemedText type="defaultSemiBold" style={styles.date}>
+                {session.createdAt ? new Date(session.createdAt).toLocaleDateString() : ''}
+              </ThemedText>
+              <ThemedView
+                style={[
+                  styles.focusBadge,
+                  { backgroundColor: getFocusBadgeColor(session.focusArea) },
+                ]}>
+                <ThemedText style={styles.focusText}>{session.focusArea}</ThemedText>
+              </ThemedView>
             </ThemedView>
-          </ThemedView>
-          <ThemedText style={styles.summary} numberOfLines={2}>
-            {session.plan}
-          </ThemedText>
-          <ThemedView style={styles.cardFooter}>
-            <ThemedText style={styles.tapHint}>Tap to view details</ThemedText>
-          </ThemedView>
-        </TouchableOpacity>
-      ))}
+            <ThemedText style={styles.summary} numberOfLines={4}>
+              {plan
+                ? `Warmup: ${plan.warmup}\nDrill: ${plan.drill}\nGame: ${plan.game}`
+                : 'No plan available.'}
+            </ThemedText>
+            <ThemedView style={styles.cardFooter}>
+              <ThemedText style={styles.tapHint}>Tap to view details</ThemedText>
+            </ThemedView>
+          </TouchableOpacity>
+        );
+      })}
     </ParallaxScrollView>
   );
 }

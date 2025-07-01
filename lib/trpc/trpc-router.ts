@@ -31,8 +31,24 @@ const practiceSessionSchema = z.object({
     plan: z.string().nullable(),
     userId: z.string(),
     chatId: z.string().nullable(),
-    createdAt: z.date(),
-    updatedAt: z.date(),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+});
+
+const chatMessageSchema = z.object({
+    id: z.string().optional(),
+    role: z.string(),
+    content: z.string(),
+    createdAt: z.string().optional(),
+});
+
+const chatSchema = z.object({
+    id: z.string(),
+    userId: z.string(),
+    name: z.string(),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+    messages: z.array(chatMessageSchema),
 });
 
 export const practiceSessionRouter = t.router({
@@ -66,8 +82,30 @@ export const practiceSessionRouter = t.router({
         .mutation(async ({ ctx, input }) => { return { success: true } }),
 });
 
+export const chatsRouter = t.router({
+    get: t.procedure
+        .input(z.object({ chatId: z.string() }))
+        .output(chatSchema.nullable())
+        .query(async ({ ctx, input }) => {
+            console.log('TRPC get input:', input);
+            return null as any
+        }),
+    create: t.procedure
+        .input(z.object({ practiceSessionId: z.number() }))
+        .output(z.string()) // returns a new chatID
+        .mutation(async ({ ctx, input }) => { return null as any }),
+    saveMessages: t.procedure
+        .input(z.object({
+            chatId: z.string(),
+            messages: z.array(chatMessageSchema)
+        }))
+        .output(z.object({ success: z.boolean() }))
+        .mutation(async ({ ctx, input }) => { return { success: true } }),
+});
+
 export const appRouter = t.router({
     practiceSession: practiceSessionRouter,
+    chats: chatsRouter,
 });
 
 export type AppRouter = typeof appRouter;
