@@ -1,27 +1,32 @@
-import { TRPCError } from '@trpc/server';
 import { desc, eq } from 'drizzle-orm';
-import { z } from 'zod';
 import { practiceSessions } from '../../db/schema';
 import { createTRPCRouter, protectedProcedure } from '../server';
+
+import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
 
 export const practiceSessionRouter = createTRPCRouter({
     list: protectedProcedure.query(async ({ ctx }) => {
         // getting user session
-        const userId = ctx.session.user.id;
+        const userId = ctx.user.id;
+        console.log('using this userId to fetch practice sessions: ', userId);
 
-        // find user practice sessions history in db
-        const foundPracticeSessions = await ctx.db.query.practiceSessions.findMany({
-            where: eq(practiceSessions.userId, userId),
-            orderBy: [desc(practiceSessions.createdAt)],
-        });
-        return foundPracticeSessions ?? null;
+        try {
+            const foundPracticeSessions = await ctx.db.query.practiceSessions.findMany({
+                where: eq(practiceSessions.userId, userId),
+                orderBy: [desc(practiceSessions.createdAt)],
+            });
+            return foundPracticeSessions ?? null;
+        } catch (err) {
+            console.error('Error fetching practice sessions:', err);
+            throw new TRPCError({
+                code: 'INTERNAL_SERVER_ERROR',
+                message: 'Failed to fetch practice sessions',
+                cause: err,
+            });
+        }
+
     }),
-
-    get: protectedProcedure
-        .input(z.object({ id: z.number() }))
-        .query(async ({ ctx, input }) => {
-            return await getPracticeSessionById(ctx, input.id);
-        }),
 
     getByChatId: protectedProcedure
         .input(z.object({ chatId: z.string() }))
@@ -30,7 +35,7 @@ export const practiceSessionRouter = createTRPCRouter({
                 where: eq(practiceSessions.chatId, input.chatId),
             });
 
-            if (!practiceSession || practiceSession.userId !== ctx.session.user.id) {
+            if (!practiceSession || practiceSession.userId !== ctx.user.id) {
                 throw new TRPCError({ code: 'UNAUTHORIZED' });
             }
 
@@ -46,7 +51,7 @@ export const practiceSessionRouter = createTRPCRouter({
                 .insert(practiceSessions)
                 .values({
                     focusArea: focus,
-                    userId: ctx.session.user.id,
+                    userId: ctx.user.id,
                 })
                 .returning()
                 .execute();
@@ -72,3 +77,4 @@ export const practiceSessionRouter = createTRPCRouter({
             return { success: true };
         }),
 });
+

@@ -5,12 +5,12 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from '../server
 
 export const authRouter = createTRPCRouter({
     getSession: publicProcedure.query(({ ctx }) => {
-        return ctx.session;
+        return ctx.user;
     }),
 
     getUser: protectedProcedure.query(async ({ ctx }) => {
         const foundUser = await ctx.db.query.user.findFirst({
-            where: eq(user.id, ctx.session.user.id),
+            where: eq(user.id, ctx.user.id),
         });
         return foundUser;
     }),
@@ -29,7 +29,7 @@ export const authRouter = createTRPCRouter({
                     ...input,
                     updatedAt: new Date(),
                 })
-                .where(eq(user.id, ctx.session.user.id))
+                .where(eq(user.id, ctx.user.id))
                 .returning();
 
             return updatedUser[0];

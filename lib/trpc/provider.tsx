@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { httpBatchLink } from '@trpc/client';
+import { httpLink } from '@trpc/client';
 import React, { useState } from 'react';
 import superjson from 'superjson';
 import { authClient } from '../auth-client';
@@ -10,16 +10,34 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [
-        httpBatchLink({
+        httpLink({
           url: 'https://courtly-xi.vercel.app/api/trpc',
           transformer: superjson,
           async headers() {
-            const session = await authClient.getSession();
-            return {
-              authorization: session?.data?.session?.token
-                ? `Bearer ${session.data.session.token}`
-                : '',
-            };
+            console.log('=== tRPC HEADERS DEBUG ===');
+
+            const headers: Record<string, string> = {};
+
+            try {
+              const session = await authClient.getSession();
+
+              if (session?.data?.session?.token) {
+                const token = session.data.session.token;
+
+                // Use the CORRECT cookie format that matches your web app
+                headers['Cookie'] = `__Secure-better-auth.session_token=${token}`;
+
+                console.log('tRPC: Sending session token in cookie header');
+                console.log('tRPC: Token value:', token.substring(0, 10) + '...');
+              } else {
+                console.log('tRPC: No session token found');
+              }
+            } catch (error) {
+              console.error('tRPC: Error getting session token:', error);
+            }
+
+            console.log('=== END tRPC HEADERS DEBUG ===');
+            return headers;
           },
         }),
       ],

@@ -11,20 +11,64 @@ import Toast from 'react-native-toast-message';
 
 export default function PreviousScreen() {
   const { user, isLoading: authLoading } = useAuth();
-  const { data: sessions, isLoading, error } = trpc.practice.getUserPracticeSessions.useQuery();
-  console.log('error: ', error);
   const router = useRouter();
 
-  console.log('Current user:', user);
-  console.log('Practice sessions:', sessions);
-  console.log('Practice sessions error: ', error);
+  // Only fetch practice sessions if user is authenticated
+  const {
+    data: sessions,
+    isLoading,
+    error,
+  } = trpc.practiceSession.list.useQuery(undefined, {
+    enabled: !!user, // Only run query if user exists
+    retry: false,
+  });
 
-  if (authLoading || isLoading) {
-    return <ThemedText className="text-center text-lg font-bold">Loading...</ThemedText>;
+  console.log('=== PREVIOUS SCREEN DEBUG ===');
+  console.log('Current user:', user?.email || 'Not authenticated');
+  console.log('Auth loading:', authLoading);
+  console.log('Practice sessions loading:', isLoading);
+  console.log('Practice sessions error:', error?.message);
+  console.log('Practice sessions data:', sessions?.length || 0, 'sessions');
+  console.log('=== END DEBUG ===');
+
+  if (authLoading) {
+    return (
+      <ThemedView style={styles.emptyContainer}>
+        <ThemedText className="text-center text-lg font-bold">Loading...</ThemedText>
+      </ThemedView>
+    );
+  }
+
+  if (!user) {
+    return (
+      <ThemedView style={styles.emptyContainer}>
+        <ThemedText style={styles.emptyText}>Please sign in to view your sessions.</ThemedText>
+      </ThemedView>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <ThemedView style={styles.emptyContainer}>
+        <ThemedText className="text-center text-lg font-bold">Loading sessions...</ThemedText>
+      </ThemedView>
+    );
+  }
+
+  if (error) {
+    return (
+      <ThemedView style={styles.emptyContainer}>
+        <ThemedText style={styles.emptyText}>Error loading sessions: {error.message}</ThemedText>
+      </ThemedView>
+    );
   }
 
   if (!sessions?.length) {
-    return <ThemedText>No previous sessions found.</ThemedText>;
+    return (
+      <ThemedView style={styles.emptyContainer}>
+        <ThemedText style={styles.emptyText}>No previous sessions found.</ThemedText>
+      </ThemedView>
+    );
   }
 
   const handleCardPress = (session: any) => {
@@ -172,5 +216,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     opacity: 0.6,
     fontStyle: 'italic',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  emptyText: {
+    textAlign: 'center',
+    fontSize: 16,
+    opacity: 0.7,
   },
 });

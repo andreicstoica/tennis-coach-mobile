@@ -9,7 +9,7 @@ import { createTRPCRouter } from './server';
  */
 export const appRouter = createTRPCRouter({
     auth: authRouter,
-    practice: practiceSessionRouter,
+    practiceSession: practiceSessionRouter,
 });
 
 // export type definition of API

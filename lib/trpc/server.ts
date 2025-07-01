@@ -13,10 +13,6 @@ import { db } from '../db';
  * These allow you to access things when processing a request, like the database, the session, etc.
  */
 
-interface CreateContextOptions {
-    session: any | null;
-}
-
 /**
  * This helper generates the "internals" for a tRPC context. If you need to use it, you can export
  * it from here.
@@ -27,12 +23,7 @@ interface CreateContextOptions {
  *
  * @see https://create.t3.gg/en/usage/trpc#-serverapitrpcts
  */
-const createInnerTRPCContext = (opts: CreateContextOptions) => {
-    return {
-        session: opts.session,
-        db,
-    };
-};
+
 
 /**
  * This is the actual context you will use in your router. It will be used to process every request
@@ -43,12 +34,18 @@ const createInnerTRPCContext = (opts: CreateContextOptions) => {
 export const createTRPCContext = async (opts: { headers: Headers }) => {
     const { headers } = opts;
 
+    console.log('Headers received in tRPC context:', Object.fromEntries(headers.entries()));
+
     // Get the session from the server using the auth API
     const session = await auth.api.getSession({ headers });
 
-    return createInnerTRPCContext({
-        session,
-    });
+    console.log('Session from auth.api.getSession:', session);
+
+    return {
+        db,
+        user: session?.user,
+        ...opts,
+    };
 };
 
 /**
@@ -87,6 +84,19 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
  */
 export const createTRPCRouter = t.router;
 
+const sessionValidationMiddleware = t.middleware(async ({ next, ctx }) => {
+    if (!ctx.user?.id) {
+        throw new TRPCError({ code: "UNAUTHORIZED" })
+    }
+
+    return next({
+        ctx: {
+            ...ctx,
+            user: ctx.user,
+        }
+    })
+})
+
 /**
  * Public (unauthenticated) procedure
  *
@@ -104,15 +114,5 @@ export const publicProcedure = t.procedure;
  *
  * @see https://trpc.io/docs/procedures
  */
-export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
-    if (!ctx.session || !ctx.session.user) {
-        throw new TRPCError({ code: 'UNAUTHORIZED' });
-    }
-    return next({
-        ctx: {
-            // infers the `session` as non-nullable
-            session: { ...ctx.session, user: ctx.session.user },
-        },
-    });
-});
+export const protectedProcedure = t.procedure.use(sessionValidationMiddleware);
 

@@ -46,13 +46,11 @@ export function SignInForm({ onSubmit, isLoading = false, onSwitchToSignUp }: Si
     setIsSigningIn(true);
 
     try {
-      await authClient.signIn.email({
-        email,
-        password,
-      });
-      onSubmit(email, password);
+      console.log('SignInForm: Calling onSubmit for email:', email);
+      // Let the parent component handle authentication via auth context
+      await onSubmit(email, password);
     } catch (error) {
-      console.error('Sign in error:', error);
+      console.error('Sign in error in form:', error);
       setErrors({
         email: 'Invalid email or password. Please try again.',
       });

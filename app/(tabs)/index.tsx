@@ -6,24 +6,23 @@ import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { Button } from '@/components/ui/button';
 import { SignInForm } from '~/components/SignInForm';
 import { SignUpForm } from '~/components/SignUpForm';
 import { useAuth } from '~/lib/auth-context';
+import { testDirectAPI } from '~/lib/test-api';
 
 export default function HomeScreen() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, signOut, signIn } = useAuth();
   const [showSignUp, setShowSignUp] = useState(false);
 
-  const handleSignIn = (email: string, password: string) => {
-    // Handle successful sign in
-    console.log('User signed in successfully:', email);
-    // The auth context will automatically update the user state
+  const handleSignIn = async (email: string, password: string) => {
+    await signIn(email, password);
+    console.log('User signed in successfully via auth context:', email);
   };
 
-  const handleSignUp = (name: string, email: string, password: string) => {
-    // Handle successful sign up
+  const handleSignUp = async (name: string, email: string, password: string) => {
     console.log('User signed up successfully:', { name, email });
-    // The auth context will automatically update the user state
   };
 
   const handleSwitchToSignUp = () => {
@@ -32,6 +31,10 @@ export default function HomeScreen() {
 
   const handleSwitchToSignIn = () => {
     setShowSignUp(false);
+  };
+
+  const handleTestAPI = () => {
+    testDirectAPI();
   };
 
   if (isLoading) {
@@ -49,14 +52,25 @@ export default function HomeScreen() {
         headerImage={
           <Image source={require('@/assets/images/icon.png')} style={styles.reactLogo} />
         }>
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="title">Welcome back, {user.name || user.email}!</ThemedText>
-          <HelloWave />
-        </ThemedView>
-        <ThemedView style={styles.stepContainer}>
+        <ThemedView style={styles.centeredContainer}>
+          <ThemedView style={styles.titleRow}>
+            <ThemedText type="title" style={styles.welcomeTitle}>
+              Welcome back, {user.name || user.email}!
+            </ThemedText>
+            <HelloWave />
+          </ThemedView>
           <ThemedText type="defaultSemiBold" style={styles.welcomeText}>
-            You&apos;re successfully signed in to Courtly. Your tennis journey awaits!
+            Successfully signed in to Courtly.
           </ThemedText>
+          <Button
+            variant="secondary"
+            onPress={handleTestAPI}
+            style={[styles.signOutButton, { marginBottom: 10 }]}>
+            <ThemedText>Test Direct API</ThemedText>
+          </Button>
+          <Button variant="outline" onPress={signOut} style={styles.signOutButton}>
+            <ThemedText>Sign Out</ThemedText>
+          </Button>
         </ThemedView>
       </ParallaxScrollView>
     );
@@ -103,9 +117,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  centeredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 32,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 18,
+  },
+  welcomeTitle: {
+    textAlign: 'center',
+    flexShrink: 1,
+  },
   welcomeText: {
     textAlign: 'center',
-    marginTop: 16,
+    marginBottom: 32,
     lineHeight: 24,
+    fontSize: 17,
+    opacity: 0.85,
+  },
+  signOutButton: {
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: 320,
+    height: 45,
+    marginTop: 0,
   },
 });

@@ -3,7 +3,7 @@ import { createAuthClient } from "better-auth/react";
 import * as SecureStore from "expo-secure-store";
 
 export const authClient = createAuthClient({
-    baseURL: "https://courtly-xi.vercel.app/", // Base URL of your Better Auth backend
+    baseURL: "https://courtly-xi.vercel.app", // base URL (without trailing slash)
     plugins: [
         expoClient({
             scheme: "tenniscoachmobile",
@@ -11,4 +11,4 @@ export const authClient = createAuthClient({
             storage: SecureStore,
         })
     ]
-}); 
+});
