@@ -6,7 +6,9 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as React from 'react';
 import { Platform } from 'react-native';
+import { AuthProvider } from '~/lib/auth-context';
 import { NAV_THEME } from '~/lib/constants';
+import { TRPCProvider } from '~/lib/trpc/provider';
 
 const LIGHT_THEME: Theme = {
   ...DefaultTheme,
@@ -45,13 +47,17 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style={isDarkColorScheme ? 'light' : 'dark'} />
-    </ThemeProvider>
+    <TRPCProvider>
+      <AuthProvider>
+        <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+          <StatusBar style={isDarkColorScheme ? 'light' : 'dark'} />
+        </ThemeProvider>
+      </AuthProvider>
+    </TRPCProvider>
   );
 }
 

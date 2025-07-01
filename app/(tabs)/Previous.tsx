@@ -2,16 +2,46 @@ import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { useAuth } from '@/lib/auth-context';
+import { trpc } from '@/lib/trpc/client';
 import * as Haptics from 'expo-haptics';
-import { Alert, StyleSheet, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
+import { StyleSheet, TouchableOpacity } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 export default function PreviousScreen() {
-  const handleCardPress = (session: any) => {
-    // Trigger haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  const { user, isLoading: authLoading } = useAuth();
+  const { data: sessions, isLoading, error } = trpc.practice.getUserPracticeSessions.useQuery();
+  console.log('error: ', error);
+  const router = useRouter();
 
-    // TODO: Navigate to stored chat in DB
-    Alert.alert('Session Details', `Loading session from ${session.date}...`);
+  console.log('Current user:', user);
+  console.log('Practice sessions:', sessions);
+  console.log('Practice sessions error: ', error);
+
+  if (authLoading || isLoading) {
+    return <ThemedText className="text-center text-lg font-bold">Loading...</ThemedText>;
+  }
+
+  if (!sessions?.length) {
+    return <ThemedText>No previous sessions found.</ThemedText>;
+  }
+
+  const handleCardPress = (session: any) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (session.chatId && typeof session.chatId === 'string' && session.chatId.length > 0) {
+      router.push(`/practice/${session.chatId}`);
+    } else {
+      Toast.show({
+        type: 'error',
+        text1: 'No chat found for this session.',
+        text2: 'Please try again.',
+        position: 'bottom',
+        bottomOffset: 100,
+        topOffset: 100,
+        visibilityTime: 3000,
+      });
+    }
   };
 
   const getFocusBadgeColor = (focus: string) => {
@@ -41,49 +71,26 @@ export default function PreviousScreen() {
         <ThemedText type="title">Previous Sessions</ThemedText>
       </ThemedView>
 
-      {/* Sample data - replace with actual data later */}
-      {[
-        {
-          date: '2024-01-15',
-          focus: 'Tennis Serve',
-          summary:
-            'Worked on improving serve accuracy and power. Focused on proper grip and follow-through technique.',
-        },
-        {
-          date: '2024-01-12',
-          focus: 'Backhand',
-          summary:
-            'Practiced backhand consistency and placement. Drilled cross-court backhands for 30 minutes.',
-        },
-        {
-          date: '2024-01-10',
-          focus: 'Footwork',
-          summary:
-            'Agility drills and court movement exercises. Worked on quick directional changes and positioning.',
-        },
-        {
-          date: '2024-01-08',
-          focus: 'Volley',
-          summary:
-            'Net play practice with emphasis on soft hands and proper positioning. Mixed in some overhead practice.',
-        },
-      ].map((session, index) => (
+      {sessions.map((session, index) => (
         <TouchableOpacity
-          key={index}
+          key={session.id}
           style={[styles.card, index % 2 === 0 ? styles.cardEven : styles.cardOdd]}
           onPress={() => handleCardPress(session)}
           activeOpacity={0.7}>
           <ThemedView style={styles.cardHeader}>
             <ThemedText type="defaultSemiBold" style={styles.date}>
-              {new Date(session.date).toLocaleDateString()}
+              {session.createdAt?.toLocaleDateString()}
             </ThemedText>
             <ThemedView
-              style={[styles.focusBadge, { backgroundColor: getFocusBadgeColor(session.focus) }]}>
-              <ThemedText style={styles.focusText}>{session.focus}</ThemedText>
+              style={[
+                styles.focusBadge,
+                { backgroundColor: getFocusBadgeColor(session.focusArea) },
+              ]}>
+              <ThemedText style={styles.focusText}>{session.focusArea}</ThemedText>
             </ThemedView>
           </ThemedView>
           <ThemedText style={styles.summary} numberOfLines={2}>
-            {session.summary}
+            {session.plan}
           </ThemedText>
           <ThemedView style={styles.cardFooter}>
             <ThemedText style={styles.tapHint}>Tap to view details</ThemedText>

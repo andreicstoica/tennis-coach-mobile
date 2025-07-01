@@ -1,4 +1,5 @@
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { authClient } from '@/lib/auth-client';
 import React, { useState } from 'react';
 import { TextInput, TouchableOpacity, View } from 'react-native';
 import { z } from 'zod';
@@ -12,14 +13,22 @@ const signInSchema = z.object({
   password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
 });
 
-export function SignInForm() {
+interface SignInFormProps {
+  onSubmit: (email: string, password: string) => void;
+  isLoading?: boolean;
+  onSwitchToSignUp: () => void;
+}
+
+export function SignInForm({ onSubmit, isLoading = false, onSwitchToSignUp }: SignInFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
   const { colorScheme } = useColorScheme();
 
   // 2. Validate with Zod on submit
-  const handleEmailSignIn = () => {
+  const handleEmailSignIn = async () => {
     const result = signInSchema.safeParse({ email, password });
 
     if (!result.success) {
@@ -34,13 +43,49 @@ export function SignInForm() {
     }
 
     setErrors({});
-    // TODO: Implement email sign in logic
-    console.log('Email sign in:', { email, password });
+    setIsSigningIn(true);
+
+    try {
+      await authClient.signIn.email({
+        email,
+        password,
+      });
+      onSubmit(email, password);
+    } catch (error) {
+      console.error('Sign in error:', error);
+      setErrors({
+        email: 'Invalid email or password. Please try again.',
+      });
+    } finally {
+      setIsSigningIn(false);
+    }
   };
 
-  const handleGoogleSignIn = () => {
-    // TODO: Implement Google sign in logic
-    console.log('Google sign in');
+  const handleGoogleSignIn = async () => {
+    setIsGoogleSigningIn(true);
+
+    try {
+      await authClient.signIn.social({
+        provider: 'google',
+        callbackURL: '/dashboard', // this will be converted to a deep link (eg. `tenniscoachmobile://dashboard`) on native
+      });
+      // Google sign-in successful
+      console.log('Google sign in successful');
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      // Handle Google sign-in errors
+      setErrors({
+        email: 'Google sign-in failed. Please try again.',
+      });
+    } finally {
+      setIsGoogleSigningIn(false);
+    }
+  };
+
+  const clearFieldError = (field: string) => {
+    if (errors[field as keyof typeof errors]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
   };
 
   return (
@@ -77,7 +122,7 @@ export function SignInForm() {
           value={email}
           onChangeText={(text) => {
             setEmail(text);
-            if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+            clearFieldError('email');
           }}
           placeholder="Enter your email"
           placeholderTextColor={colorScheme === 'dark' ? '#9ca3af' : '#6b7280'}
@@ -109,7 +154,7 @@ export function SignInForm() {
           value={password}
           onChangeText={(text) => {
             setPassword(text);
-            if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
+            clearFieldError('password');
           }}
           placeholder="Enter your password"
           placeholderTextColor={colorScheme === 'dark' ? '#9ca3af' : '#6b7280'}
@@ -138,8 +183,15 @@ export function SignInForm() {
       {/* Email Sign In Button */}
       <TouchableOpacity
         onPress={handleEmailSignIn}
+        disabled={isSigningIn}
         style={{
-          backgroundColor: colorScheme === 'dark' ? '#3b82f6' : '#2563eb',
+          backgroundColor: isSigningIn
+            ? colorScheme === 'dark'
+              ? '#6b7280'
+              : '#9ca3af'
+            : colorScheme === 'dark'
+              ? '#3b82f6'
+              : '#2563eb',
           padding: 16,
           borderRadius: 8,
           marginBottom: 16,
@@ -157,7 +209,7 @@ export function SignInForm() {
             color: '#ffffff',
             fontSize: 16,
           }}>
-          Sign In with Email
+          {isSigningIn ? 'Signing In...' : 'Sign In with Email'}
         </ThemedText>
       </TouchableOpacity>
 
@@ -194,6 +246,7 @@ export function SignInForm() {
       {/* Google Sign In Button */}
       <TouchableOpacity
         onPress={handleGoogleSignIn}
+        disabled={isGoogleSigningIn}
         style={{
           backgroundColor: colorScheme === 'dark' ? '#374151' : '#f9fafb',
           padding: 16,
@@ -209,6 +262,7 @@ export function SignInForm() {
           shadowOpacity: 0.1,
           shadowRadius: 2,
           elevation: 2,
+          opacity: isGoogleSigningIn ? 0.6 : 1,
         }}
         activeOpacity={0.8}>
         <IconSymbol
@@ -223,7 +277,24 @@ export function SignInForm() {
             color: colorScheme === 'dark' ? '#ffffff' : '#000000',
             fontSize: 16,
           }}>
-          Continue with Google
+          {isGoogleSigningIn ? 'Signing in with Google...' : 'Continue with Google'}
+        </ThemedText>
+      </TouchableOpacity>
+
+      {/* Switch to Sign Up */}
+      <TouchableOpacity
+        onPress={onSwitchToSignUp}
+        style={{
+          alignItems: 'center',
+          padding: 12,
+        }}
+        activeOpacity={0.7}>
+        <ThemedText
+          style={{
+            color: colorScheme === 'dark' ? '#3b82f6' : '#2563eb',
+            fontSize: 14,
+          }}>
+          Don&apos;t have an account? Sign Up
         </ThemedText>
       </TouchableOpacity>
     </ThemedView>
