@@ -14,7 +14,7 @@ import { SignUpForm } from '~/components/SignUpForm';
 import { useAuth } from '~/lib/auth-context';
 
 export default function HomeScreen() {
-  const { user, isLoading, signOut, signIn } = useAuth();
+  const { user, isLoading, signIn } = useAuth();
   const [showSignUp, setShowSignUp] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [focus, setFocus] = useState('');
@@ -149,9 +149,6 @@ export default function HomeScreen() {
             style={{ marginBottom: 16, marginTop: 0 }}>
             <ThemedText>New Practice Session</ThemedText>
           </Button>
-          <Button variant="outline" onPress={signOut} style={styles.signOutButton}>
-            <ThemedText>Sign Out</ThemedText>
-          </Button>
           {plan && <PracticePlanView plan={plan} />}
         </ThemedView>
         <NewPracticeSessionModal
@@ -249,12 +246,5 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     fontSize: 17,
     opacity: 0.85,
-  },
-  signOutButton: {
-    alignSelf: 'center',
-    width: '100%',
-    maxWidth: 320,
-    height: 45,
-    marginTop: 0,
   },
 });
