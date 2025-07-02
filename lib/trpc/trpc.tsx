@@ -35,6 +35,22 @@ export function TRPCClientProvider(props: { children: React.ReactNode }) {
             }
             return Object.fromEntries(headers);
           },
+          fetch: async (url, options) => {
+            console.log('TRPC fetch request:', { url, method: options?.method });
+            try {
+              const response = await fetch(url, options);
+              console.log('TRPC fetch response status:', response.status);
+              if (!response.ok) {
+                const errorText = await response.text();
+                console.error('TRPC fetch error:', errorText);
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+              }
+              return response;
+            } catch (error) {
+              console.error('TRPC fetch error:', error);
+              throw error;
+            }
+          },
         }),
       ],
     })

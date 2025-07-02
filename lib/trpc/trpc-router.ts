@@ -36,10 +36,10 @@ const practiceSessionSchema = z.object({
 });
 
 const chatMessageSchema = z.object({
-    id: z.string().optional(),
+    id: z.string(),
     role: z.string(),
     content: z.string(),
-    createdAt: z.string().optional(),
+    createdAt: z.string(),
 });
 
 const chatSchema = z.object({
@@ -61,13 +61,13 @@ export const practiceSessionRouter = t.router({
     get: t.procedure
         .input(z.object({ id: z.number() }))
         .output(practiceSessionSchema.nullable())
-        .query(async ({ ctx, input }) => { return null as any }),
+        .query(async ({ ctx, input }) => { return [] as any }),
 
     // Get a practice session by chat ID
     getByChatId: t.procedure
         .input(z.object({ chatId: z.string() }))
         .output(practiceSessionSchema.nullable())
-        .query(async ({ ctx, input }) => { return null as any }),
+        .query(async ({ ctx, input }) => { return [] as any }),
 
     // Create a new practice session
     create: t.procedure
@@ -82,18 +82,18 @@ export const practiceSessionRouter = t.router({
         .mutation(async ({ ctx, input }) => { return { success: true } }),
 });
 
-export const chatsRouter = t.router({
+export const chatRouter = t.router({
     get: t.procedure
         .input(z.object({ chatId: z.string() }))
         .output(chatSchema.nullable())
         .query(async ({ ctx, input }) => {
-            console.log('TRPC get input:', input);
-            return null as any
+            console.log('TRPC get chat with input:', input);
+            return [] as any
         }),
     create: t.procedure
         .input(z.object({ practiceSessionId: z.number() }))
         .output(z.string()) // returns a new chatID
-        .mutation(async ({ ctx, input }) => { return null as any }),
+        .mutation(async ({ ctx, input }) => { return [] as any }),
     saveMessages: t.procedure
         .input(z.object({
             chatId: z.string(),
@@ -105,7 +105,7 @@ export const chatsRouter = t.router({
 
 export const appRouter = t.router({
     practiceSession: practiceSessionRouter,
-    chats: chatsRouter,
+    chat: chatRouter,
 });
 
 export type AppRouter = typeof appRouter;

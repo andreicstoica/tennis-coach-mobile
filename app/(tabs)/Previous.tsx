@@ -48,7 +48,6 @@ export default function PreviousScreen() {
   console.log('=== start SESSIONS DETAILS ===');
   console.log('Sessions type:', typeof sessions);
   console.log('Sessions array check:', Array.isArray(sessions));
-  //console.log('Sample session: ', sessions?.[0]);
   console.log('=== end SESSIONS DETAILS ===');
 
   if (authLoading) {
@@ -94,6 +93,7 @@ export default function PreviousScreen() {
   const handleCardPress = (session: PracticeSession) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (session.chatId && typeof session.chatId === 'string' && session.chatId.length > 0) {
+      console.log('Navigating to chat:', session.chatId);
       router.push(`/practice/${session.chatId}`);
     } else {
       Toast.show({
