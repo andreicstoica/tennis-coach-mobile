@@ -1,13 +1,14 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
 import { useAuth } from '@/lib/auth-context';
 import { useTRPC } from '@/lib/trpc/trpc';
 import { useQuery } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 interface PracticeSession {
@@ -30,6 +31,7 @@ export default function PreviousScreen() {
   const router = useRouter();
   const trpc = useTRPC();
   const insets = useSafeAreaInsets();
+  const bottomTabBarHeight = useBottomTabOverflow();
 
   // Filter state
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
@@ -209,124 +211,174 @@ export default function PreviousScreen() {
   };
 
   return (
-    <ScrollView
-      style={styles.scrollView}
-      contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top }]}>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Previous Sessions</ThemedText>
-      </ThemedView>
+    <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top, paddingBottom: bottomTabBarHeight + insets.bottom + 16 },
+        ]}>
+        <ThemedView style={styles.titleContainer}>
+          <ThemedText type="title">Previous Sessions</ThemedText>
+        </ThemedView>
 
-      {/* Year Filter */}
-      {years.length > 0 && (
-        <ThemedView style={styles.filterSection}>
-          <ThemedText style={styles.filterLabel}>Year</ThemedText>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-            <TouchableOpacity
-              style={[styles.filterChip, !selectedYear && styles.filterChipActive]}
-              onPress={clearFilters}>
-              <ThemedText
-                style={[styles.filterChipText, !selectedYear && styles.filterChipTextActive]}>
-                All
-              </ThemedText>
-            </TouchableOpacity>
-            {years.map((year) => (
+        {/* Year Filter */}
+        {years.length > 0 && (
+          <ThemedView style={styles.filterSection}>
+            <ThemedText style={styles.filterLabel}>Year</ThemedText>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.filterScroll}>
               <TouchableOpacity
-                key={year}
-                style={[styles.filterChip, selectedYear === year && styles.filterChipActive]}
-                onPress={() => handleYearPress(year)}>
+                style={[styles.filterChip, !selectedYear && styles.filterChipActive]}
+                onPress={clearFilters}>
                 <ThemedText
-                  style={[
-                    styles.filterChipText,
-                    selectedYear === year && styles.filterChipTextActive,
-                  ]}>
-                  {year}
+                  style={[styles.filterChipText, !selectedYear && styles.filterChipTextActive]}>
+                  All
                 </ThemedText>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </ThemedView>
-      )}
+              {years.map((year) => (
+                <TouchableOpacity
+                  key={year}
+                  style={[styles.filterChip, selectedYear === year && styles.filterChipActive]}
+                  onPress={() => handleYearPress(year)}>
+                  <ThemedText
+                    style={[
+                      styles.filterChipText,
+                      selectedYear === year && styles.filterChipTextActive,
+                    ]}>
+                    {year}
+                  </ThemedText>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </ThemedView>
+        )}
 
-      {/* Month Filter */}
-      {selectedYear && months.length > 0 && (
-        <ThemedView style={styles.filterSection}>
-          <ThemedText style={styles.filterLabel}>Month</ThemedText>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-            <TouchableOpacity
-              style={[styles.filterChip, !selectedMonth && styles.filterChipActive]}
-              onPress={() => setSelectedMonth(null)}>
-              <ThemedText
-                style={[styles.filterChipText, !selectedMonth && styles.filterChipTextActive]}>
-                All
-              </ThemedText>
-            </TouchableOpacity>
-            {months.map((month) => (
+        {/* Month Filter */}
+        {selectedYear && months.length > 0 && (
+          <ThemedView style={styles.filterSection}>
+            <ThemedText style={styles.filterLabel}>Month</ThemedText>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.filterScroll}>
               <TouchableOpacity
-                key={month}
-                style={[styles.filterChip, selectedMonth === month && styles.filterChipActive]}
-                onPress={() => handleMonthPress(month)}>
+                style={[styles.filterChip, !selectedMonth && styles.filterChipActive]}
+                onPress={() => setSelectedMonth(null)}>
                 <ThemedText
-                  style={[
-                    styles.filterChipText,
-                    selectedMonth === month && styles.filterChipTextActive,
-                  ]}>
-                  {new Date(2024, month - 1).toLocaleDateString('en-US', { month: 'short' })}
+                  style={[styles.filterChipText, !selectedMonth && styles.filterChipTextActive]}>
+                  All
                 </ThemedText>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </ThemedView>
-      )}
+              {months.map((month) => (
+                <TouchableOpacity
+                  key={month}
+                  style={[styles.filterChip, selectedMonth === month && styles.filterChipActive]}
+                  onPress={() => handleMonthPress(month)}>
+                  <ThemedText
+                    style={[
+                      styles.filterChipText,
+                      selectedMonth === month && styles.filterChipTextActive,
+                    ]}>
+                    {new Date(2024, month - 1).toLocaleDateString('en-US', { month: 'short' })}
+                  </ThemedText>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </ThemedView>
+        )}
 
-      {/* Sessions */}
-      {filteredSessions.map((session: PracticeSession, index: number) => {
-        let plan: Plan | null = null;
-        try {
-          plan = session.plan ? JSON.parse(session.plan) : null;
-        } catch {
-          plan = null;
-        }
-        return (
-          <TouchableOpacity
-            key={session.id ?? index}
-            style={[styles.card, index % 2 === 0 ? styles.cardEven : styles.cardOdd]}
-            onPress={() => handleCardPress(session)}
-            activeOpacity={0.7}>
-            <ThemedView style={styles.cardHeader}>
-              <ThemedView
-                style={[
-                  styles.focusBadge,
-                  { backgroundColor: getFocusBadgeColor(session.focusArea) },
-                ]}>
-                <ThemedText style={styles.focusText}>{session.focusArea}</ThemedText>
+        {/* Sessions */}
+        {filteredSessions.map((session: PracticeSession, index: number) => {
+          let plan: Plan | null = null;
+          try {
+            plan = session.plan ? JSON.parse(session.plan) : null;
+          } catch {
+            plan = null;
+          }
+
+          // Emoji for focus area
+          const focusEmoji = (() => {
+            const focus = session.focusArea.toLowerCase();
+            if (/serve|serving/.test(focus)) return '🎯';
+            if (/backhand/.test(focus)) return '🤜';
+            if (/footwork|movement|agility/.test(focus)) return '💃';
+            if (/volley/.test(focus)) return '🏐';
+            if (/forehand/.test(focus)) return '🫲';
+            if (/strategy|tactics|game\s*plan|mental|mindset/.test(focus)) return '🧠';
+            if (/return|returning/.test(focus)) return '↩️';
+            if (/approach|approaching/.test(focus)) return '🏃';
+            if (/lob|overhead/.test(focus)) return '🪂';
+            return '🏷️';
+          })();
+
+          // Spine color (use focus badge color)
+          const spineColor = getFocusBadgeColor(session.focusArea);
+
+          return (
+            <TouchableOpacity
+              key={session.id ?? index}
+              style={styles.notebookCardWrapper}
+              onPress={() => handleCardPress(session)}
+              activeOpacity={0.85}>
+              {/* Notebook Spine */}
+              <ThemedView style={[styles.notebookSpine, { backgroundColor: spineColor }]}>
+                <ThemedText style={styles.spineText}>
+                  {session.createdAt ? new Date(session.createdAt).toLocaleDateString() : ''}
+                </ThemedText>
+                <ThemedText style={styles.spineText}>
+                  <ThemedText style={styles.spineEmoji}>{focusEmoji}</ThemedText>{' '}
+                  {session.focusArea}
+                </ThemedText>
               </ThemedView>
-              <ThemedText type="defaultSemiBold" style={styles.date}>
-                {session.createdAt ? new Date(session.createdAt).toLocaleDateString() : ''}
-              </ThemedText>
-            </ThemedView>
-            <ThemedText style={styles.summary} numberOfLines={4}>
-              {plan
-                ? `Warmup: ${plan.warmup}\nDrill: ${plan.drill}\nGame: ${plan.game}`
-                : 'No plan available.'}
-            </ThemedText>
-          </TouchableOpacity>
-        );
-      })}
+              {/* Notebook Cover */}
+              <ThemedView style={styles.notebookCover}>
+                {plan ? (
+                  <>
+                    <ThemedText style={styles.coverRow} numberOfLines={1} ellipsizeMode="tail">
+                      <ThemedText style={styles.coverEmoji}>🔥</ThemedText>
+                      <ThemedText style={styles.coverLabel}> Warmup: </ThemedText>
+                      {plan.warmup}
+                    </ThemedText>
+                    <ThemedText style={styles.coverRow} numberOfLines={1} ellipsizeMode="tail">
+                      <ThemedText style={styles.coverEmoji}>🏋️‍♂️</ThemedText>
+                      <ThemedText style={styles.coverLabel}> Drill: </ThemedText>
+                      {plan.drill}
+                    </ThemedText>
+                    <ThemedText style={styles.coverRow} numberOfLines={1} ellipsizeMode="tail">
+                      <ThemedText style={styles.coverEmoji}>🤺</ThemedText>
+                      <ThemedText style={styles.coverLabel}> Game: </ThemedText>
+                      {plan.game}
+                    </ThemedText>
+                  </>
+                ) : (
+                  <ThemedText style={styles.coverText} numberOfLines={2} ellipsizeMode="tail">
+                    <ThemedText style={styles.coverEmoji}>📝</ThemedText> No plan available.
+                  </ThemedText>
+                )}
+              </ThemedView>
+            </TouchableOpacity>
+          );
+        })}
 
-      {filteredSessions.length === 0 && sessions.length > 0 && (
-        <ThemedView style={styles.emptyContainer}>
-          <ThemedText style={styles.emptyText}>
-            No sessions found for the selected filters.
-          </ThemedText>
-        </ThemedView>
-      )}
-    </ScrollView>
+        {filteredSessions.length === 0 && sessions.length > 0 && (
+          <ThemedView style={styles.emptyContainer}>
+            <ThemedText style={styles.emptyText}>
+              No sessions found for the selected filters.
+            </ThemedText>
+          </ThemedView>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
+    marginBottom: 48,
   },
   scrollContent: {
     marginTop: 16,
@@ -354,11 +406,9 @@ const styles = StyleSheet.create({
   },
   cardEven: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    // Remove the left border color
   },
   cardOdd: {
     backgroundColor: 'rgba(248, 250, 252, 0.95)',
-    // Remove the left border color
   },
   cardHeader: {
     flexDirection: 'row',
@@ -443,5 +493,76 @@ const styles = StyleSheet.create({
   },
   filterChipTextActive: {
     color: '#FFFFFF',
+  },
+  // Notebook Card Styles
+  notebookCardWrapper: {
+    marginBottom: 28,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 6, height: 6 },
+    shadowOpacity: 0.13,
+    shadowRadius: 12,
+    elevation: 7,
+    backgroundColor: 'transparent',
+  },
+  notebookSpine: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: 6,
+    borderBottomRightRadius: 6,
+    minHeight: 38,
+  },
+  spineText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
+    letterSpacing: 0.5,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  spineEmoji: {
+    fontSize: 16,
+    marginRight: 4,
+  },
+  notebookCover: {
+    backgroundColor: '#FFFDF7',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    borderTopLeftRadius: 6,
+    borderTopRightRadius: 6,
+    padding: 18,
+    borderWidth: 1.5,
+    borderColor: '#E5E5E5',
+    borderStyle: 'dotted',
+    minHeight: 90,
+  },
+  coverText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#333',
+    opacity: 0.95,
+  },
+  coverLabel: {
+    fontWeight: '700',
+    color: '#007AFF',
+    fontSize: 14,
+  },
+  coverEmoji: {
+    fontSize: 16,
+    marginRight: 2,
+  },
+  coverRow: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#333',
+    opacity: 0.95,
+    marginBottom: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });

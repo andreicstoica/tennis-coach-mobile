@@ -120,6 +120,9 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
         backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#ffffff',
         borderWidth: 1,
         borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
+        width: '100%',
+        maxWidth: 400,
+        alignSelf: 'center',
       }}>
       <ThemedText
         type="title"
@@ -133,7 +136,7 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
       </ThemedText>
 
       {/* Name Input */}
-      <View style={{ marginBottom: 16 }}>
+      <View style={{ marginBottom: 16, width: '100%', alignSelf: 'stretch' }}>
         <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
           Full Name
         </ThemedText>
@@ -166,7 +169,7 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
       </View>
 
       {/* Email Input */}
-      <View style={{ marginBottom: 16 }}>
+      <View style={{ marginBottom: 16, width: '100%', alignSelf: 'stretch' }}>
         <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
           Email
         </ThemedText>
@@ -200,7 +203,7 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
       </View>
 
       {/* Password Input */}
-      <View style={{ marginBottom: 16 }}>
+      <View style={{ marginBottom: 16, width: '100%', alignSelf: 'stretch' }}>
         <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
           Password
         </ThemedText>
@@ -237,7 +240,7 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
       </View>
 
       {/* Confirm Password Input */}
-      <View style={{ marginBottom: 24 }}>
+      <View style={{ marginBottom: 24, width: '100%', alignSelf: 'stretch' }}>
         <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
           Confirm Password
         </ThemedText>
@@ -323,6 +326,7 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
           justifyContent: 'center',
           gap: 8,
           alignSelf: 'center',
+          width: '100%',
         }}>
         <IconSymbol size={20} name="globe" color={colorScheme === 'dark' ? '#ffffff' : '#000000'} />
         <ThemedText
@@ -336,7 +340,7 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
       </TouchableOpacity>
 
       {/* Switch to Sign In */}
-      <View style={{ alignItems: 'center' }}>
+      <View style={{ alignItems: 'center', width: '100%' }}>
         <ThemedText
           style={{ color: colorScheme === 'dark' ? '#9ca3af' : '#6b7280', marginBottom: 8 }}>
           Already have an account?

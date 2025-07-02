@@ -40,7 +40,7 @@ export default function NewPracticeSessionModal({
             width: 320,
             maxWidth: '90%',
           }}>
-          <ThemedText type="title" style={{ marginBottom: 12 }}>
+          <ThemedText type="subtitle" style={{ marginBottom: 12 }}>
             New Practice Session
           </ThemedText>
           <Input
