@@ -171,6 +171,8 @@ export default function HomeScreen() {
     <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="title">Welcome to Courtly</ThemedText>
+      </ThemedView>
+      <ThemedView style={styles.waveContainer}>
         <HelloWave />
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
@@ -189,17 +191,30 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 32,
-    gap: 16,
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
   },
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    marginBottom: 0,
+    justifyContent: 'center',
+  },
+  waveContainer: {
+    alignItems: 'center',
+    marginBottom: 8,
+    paddingVertical: 4,
   },
   stepContainer: {
+    width: '100%',
+    maxWidth: 400,
     gap: 8,
     marginBottom: 8,
+    alignItems: 'center',
+    paddingHorizontal: 16,
   },
   loadingContainer: {
     flex: 1,
@@ -210,9 +225,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 32,
   },
   welcomeBlock: {
     alignItems: 'center',

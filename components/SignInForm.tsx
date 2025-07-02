@@ -89,7 +89,8 @@ export function SignInForm({ onSubmit, isLoading = false, onSwitchToSignUp }: Si
   return (
     <ThemedView
       style={{
-        padding: 24,
+        paddingVertical: 24,
+        paddingHorizontal: 24,
         borderRadius: 12,
         shadowColor: colorScheme === 'dark' ? '#000' : '#000',
         shadowOffset: { width: 0, height: 4 },
@@ -132,6 +133,8 @@ export function SignInForm({ onSubmit, isLoading = false, onSwitchToSignUp }: Si
             fontSize: 16,
             backgroundColor: colorScheme === 'dark' ? '#111827' : '#ffffff',
             color: colorScheme === 'dark' ? '#ffffff' : '#000000',
+            width: '100%',
+            alignSelf: 'stretch',
           }}
           keyboardType="email-address"
           autoCapitalize="none"
@@ -168,6 +171,8 @@ export function SignInForm({ onSubmit, isLoading = false, onSwitchToSignUp }: Si
             fontSize: 16,
             backgroundColor: colorScheme === 'dark' ? '#111827' : '#ffffff',
             color: colorScheme === 'dark' ? '#ffffff' : '#000000',
+            width: '100%',
+            alignSelf: 'stretch',
           }}
           secureTextEntry
         />
@@ -199,6 +204,8 @@ export function SignInForm({ onSubmit, isLoading = false, onSwitchToSignUp }: Si
           shadowOpacity: 0.2,
           shadowRadius: 4,
           elevation: 4,
+          width: '100%',
+          alignSelf: 'center',
         }}
         activeOpacity={0.8}>
         <ThemedText
@@ -217,6 +224,8 @@ export function SignInForm({ onSubmit, isLoading = false, onSwitchToSignUp }: Si
           flexDirection: 'row',
           alignItems: 'center',
           marginVertical: 16,
+          width: '100%',
+          alignSelf: 'stretch',
         }}>
         <View
           style={{
@@ -246,36 +255,31 @@ export function SignInForm({ onSubmit, isLoading = false, onSwitchToSignUp }: Si
         onPress={handleGoogleSignIn}
         disabled={isGoogleSigningIn}
         style={{
-          backgroundColor: colorScheme === 'dark' ? '#374151' : '#f9fafb',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: colorScheme === 'dark' ? '#111827' : '#fff',
+          borderWidth: 1,
+          borderColor: colorScheme === 'dark' ? '#374151' : '#d1d5db',
           padding: 16,
           borderRadius: 8,
-          marginBottom: 12,
-          alignItems: 'center',
-          flexDirection: 'row',
-          justifyContent: 'center',
-          borderWidth: 1,
-          borderColor: colorScheme === 'dark' ? '#4b5563' : '#d1d5db',
-          shadowColor: colorScheme === 'dark' ? '#000' : '#000',
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.1,
-          shadowRadius: 2,
-          elevation: 2,
-          opacity: isGoogleSigningIn ? 0.6 : 1,
+          marginBottom: 16,
+          alignSelf: 'center',
         }}
         activeOpacity={0.8}>
         <IconSymbol
           name="globe"
           size={20}
-          color={colorScheme === 'dark' ? '#ffffff' : '#000000'}
+          color={colorScheme === 'dark' ? '#fff' : '#000'}
           style={{ marginRight: 8 }}
         />
         <ThemedText
           type="defaultSemiBold"
           style={{
-            color: colorScheme === 'dark' ? '#ffffff' : '#000000',
+            color: colorScheme === 'dark' ? '#fff' : '#000',
             fontSize: 16,
           }}>
-          {isGoogleSigningIn ? 'Signing in with Google...' : 'Continue with Google'}
+          {isGoogleSigningIn ? 'Signing In...' : 'Continue with Google'}
         </ThemedText>
       </TouchableOpacity>
 

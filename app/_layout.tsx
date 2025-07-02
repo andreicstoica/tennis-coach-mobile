@@ -5,8 +5,8 @@ import { DarkTheme, DefaultTheme, Theme, ThemeProvider } from '@react-navigation
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as React from 'react';
-import { Platform } from 'react-native';
-import { AuthProvider } from '~/lib/auth-context';
+import { ActivityIndicator, Platform, View } from 'react-native';
+import { AuthProvider, useAuth } from '~/lib/auth-context';
 import { NAV_THEME } from '~/lib/constants';
 import { TRPCClientProvider } from '~/lib/trpc/trpc';
 
@@ -43,21 +43,45 @@ export default function RootLayout() {
   }, []);
 
   if (!isColorSchemeLoaded) {
-    return null;
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
   }
 
   return (
     <TRPCClientProvider>
       <AuthProvider>
         <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="+not-found" />
-          </Stack>
+          <AuthGate />
           <StatusBar style={isDarkColorScheme ? 'light' : 'dark'} />
         </ThemeProvider>
       </AuthProvider>
     </TRPCClientProvider>
+  );
+}
+
+function AuthGate() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  return (
+    <Stack>
+      {!user ? (
+        <Stack.Screen name="auth" options={{ headerShown: false }} />
+      ) : (
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      )}
+      <Stack.Screen name="+not-found" />
+    </Stack>
   );
 }
 

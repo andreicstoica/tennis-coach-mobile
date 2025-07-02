@@ -109,7 +109,8 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
   return (
     <ThemedView
       style={{
-        padding: 24,
+        paddingVertical: 24,
+        paddingHorizontal: 24,
         borderRadius: 12,
         shadowColor: colorScheme === 'dark' ? '#000' : '#000',
         shadowOffset: { width: 0, height: 4 },
@@ -152,6 +153,8 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
             fontSize: 16,
             backgroundColor: colorScheme === 'dark' ? '#111827' : '#ffffff',
             color: colorScheme === 'dark' ? '#ffffff' : '#000000',
+            width: '100%',
+            alignSelf: 'stretch',
           }}
           autoCapitalize="words"
         />
@@ -183,6 +186,8 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
             fontSize: 16,
             backgroundColor: colorScheme === 'dark' ? '#111827' : '#ffffff',
             color: colorScheme === 'dark' ? '#ffffff' : '#000000',
+            width: '100%',
+            alignSelf: 'stretch',
           }}
           keyboardType="email-address"
           autoCapitalize="none"
@@ -219,6 +224,8 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
             fontSize: 16,
             backgroundColor: colorScheme === 'dark' ? '#111827' : '#ffffff',
             color: colorScheme === 'dark' ? '#ffffff' : '#000000',
+            width: '100%',
+            alignSelf: 'stretch',
           }}
           secureTextEntry
         />
@@ -254,6 +261,8 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
             fontSize: 16,
             backgroundColor: colorScheme === 'dark' ? '#111827' : '#ffffff',
             color: colorScheme === 'dark' ? '#ffffff' : '#000000',
+            width: '100%',
+            alignSelf: 'stretch',
           }}
           secureTextEntry
         />
@@ -285,6 +294,8 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
           shadowOpacity: 0.2,
           shadowRadius: 4,
           elevation: 4,
+          width: '100%',
+          alignSelf: 'center',
         }}>
         <ThemedText
           style={{
@@ -311,6 +322,7 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
           flexDirection: 'row',
           justifyContent: 'center',
           gap: 8,
+          alignSelf: 'center',
         }}>
         <IconSymbol size={20} name="globe" color={colorScheme === 'dark' ? '#ffffff' : '#000000'} />
         <ThemedText
