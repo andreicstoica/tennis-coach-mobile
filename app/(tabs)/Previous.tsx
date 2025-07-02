@@ -1,13 +1,13 @@
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useAuth } from '@/lib/auth-context';
 import { useTRPC } from '@/lib/trpc/trpc';
 import { useQuery } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 interface PracticeSession {
@@ -29,6 +29,11 @@ export default function PreviousScreen() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const trpc = useTRPC();
+  const insets = useSafeAreaInsets();
+
+  // Filter state
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
 
   // Only fetch practice sessions if user is authenticated
   const {
@@ -49,6 +54,45 @@ export default function PreviousScreen() {
   console.log('Sessions type:', typeof sessions);
   console.log('Sessions array check:', Array.isArray(sessions));
   console.log('=== end SESSIONS DETAILS ===');
+
+  // Get unique years and months from sessions
+  const { years, months } = useMemo(() => {
+    if (!sessions?.length) return { years: [], months: [] };
+
+    const yearSet = new Set<number>();
+    const monthSet = new Set<number>();
+
+    sessions.forEach((session) => {
+      if (session.createdAt) {
+        const date = new Date(session.createdAt);
+        yearSet.add(date.getFullYear());
+        monthSet.add(date.getMonth() + 1); // getMonth() returns 0-11
+      }
+    });
+
+    return {
+      years: Array.from(yearSet).sort((a, b) => b - a), // Most recent first
+      months: Array.from(monthSet).sort((a, b) => a - b), // 1-12 order
+    };
+  }, [sessions]);
+
+  // Filter sessions based on selected year and month
+  const filteredSessions = useMemo(() => {
+    if (!sessions?.length) return [];
+
+    return sessions.filter((session) => {
+      if (!session.createdAt) return false;
+
+      const date = new Date(session.createdAt);
+      const sessionYear = date.getFullYear();
+      const sessionMonth = date.getMonth() + 1;
+
+      if (selectedYear && sessionYear !== selectedYear) return false;
+      if (selectedMonth && sessionMonth !== selectedMonth) return false;
+
+      return true;
+    });
+  }, [sessions, selectedYear, selectedMonth]);
 
   if (authLoading) {
     return (
@@ -109,33 +153,133 @@ export default function PreviousScreen() {
   };
 
   const getFocusBadgeColor = (focus: string) => {
-    const colors = {
-      'Tennis Serve': '#FF6B6B',
-      Backhand: '#4ECDC4',
-      Footwork: '#45B7D1',
-      Volley: '#96CEB4',
-      Forehand: '#FFEAA7',
-      Strategy: '#DDA0DD',
-    };
-    return colors[focus as keyof typeof colors] || '#007AFF';
+    const normalizedFocus = focus.toLowerCase().trim();
+
+    // Use regex patterns to match focus areas
+    if (/serve|serving/.test(normalizedFocus)) {
+      return '#FF6B6B'; // Red for serve-related
+    }
+    if (/backhand/.test(normalizedFocus)) {
+      return '#4ECDC4'; // Teal for backhand-related
+    }
+    if (/footwork|movement|agility/.test(normalizedFocus)) {
+      return '#45B7D1'; // Blue for footwork/movement
+    }
+    if (/volley/.test(normalizedFocus)) {
+      return '#96CEB4'; // Green for volley
+    }
+    if (/forehand/.test(normalizedFocus)) {
+      return '#F4D03F'; // Darker yellow for forehand
+    }
+    if (/strategy|tactics|game\s*plan|mental|mindset/.test(normalizedFocus)) {
+      return '#DDA0DD'; // Purple for strategy
+    }
+    if (/return|returning/.test(normalizedFocus)) {
+      return '#FFB347'; // Orange for returns
+    }
+    if (/approach|approaching/.test(normalizedFocus)) {
+      return '#87CEEB'; // Sky blue for approach shots
+    }
+    if (/lob|overhead/.test(normalizedFocus)) {
+      return '#98FB98'; // Pale green for lobs/overheads
+    }
+    if (/footwork|movement|agility/.test(normalizedFocus)) {
+      return '#FF8C42'; // Orange-red for footwork
+    }
+
+    // Backup color for unmatched categories
+    return '#A9A9A9'; // Gray for unmatched focus areas
+  };
+
+  const handleYearPress = (year: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedYear(selectedYear === year ? null : year);
+    setSelectedMonth(null); // Reset month when year changes
+  };
+
+  const handleMonthPress = (month: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedMonth(selectedMonth === month ? null : month);
+  };
+
+  const clearFilters = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedYear(null);
+    setSelectedMonth(null);
   };
 
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="calendar.day.timeline.leading"
-          style={styles.headerImage}
-        />
-      }>
+    <ScrollView
+      style={styles.scrollView}
+      contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top }]}>
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="title">Previous Sessions</ThemedText>
       </ThemedView>
 
-      {sessions.map((session: PracticeSession, index: number) => {
+      {/* Year Filter */}
+      {years.length > 0 && (
+        <ThemedView style={styles.filterSection}>
+          <ThemedText style={styles.filterLabel}>Year</ThemedText>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+            <TouchableOpacity
+              style={[styles.filterChip, !selectedYear && styles.filterChipActive]}
+              onPress={clearFilters}>
+              <ThemedText
+                style={[styles.filterChipText, !selectedYear && styles.filterChipTextActive]}>
+                All
+              </ThemedText>
+            </TouchableOpacity>
+            {years.map((year) => (
+              <TouchableOpacity
+                key={year}
+                style={[styles.filterChip, selectedYear === year && styles.filterChipActive]}
+                onPress={() => handleYearPress(year)}>
+                <ThemedText
+                  style={[
+                    styles.filterChipText,
+                    selectedYear === year && styles.filterChipTextActive,
+                  ]}>
+                  {year}
+                </ThemedText>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </ThemedView>
+      )}
+
+      {/* Month Filter */}
+      {selectedYear && months.length > 0 && (
+        <ThemedView style={styles.filterSection}>
+          <ThemedText style={styles.filterLabel}>Month</ThemedText>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+            <TouchableOpacity
+              style={[styles.filterChip, !selectedMonth && styles.filterChipActive]}
+              onPress={() => setSelectedMonth(null)}>
+              <ThemedText
+                style={[styles.filterChipText, !selectedMonth && styles.filterChipTextActive]}>
+                All
+              </ThemedText>
+            </TouchableOpacity>
+            {months.map((month) => (
+              <TouchableOpacity
+                key={month}
+                style={[styles.filterChip, selectedMonth === month && styles.filterChipActive]}
+                onPress={() => handleMonthPress(month)}>
+                <ThemedText
+                  style={[
+                    styles.filterChipText,
+                    selectedMonth === month && styles.filterChipTextActive,
+                  ]}>
+                  {new Date(2024, month - 1).toLocaleDateString('en-US', { month: 'short' })}
+                </ThemedText>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </ThemedView>
+      )}
+
+      {/* Sessions */}
+      {filteredSessions.map((session: PracticeSession, index: number) => {
         let plan: Plan | null = null;
         try {
           plan = session.plan ? JSON.parse(session.plan) : null;
@@ -149,9 +293,6 @@ export default function PreviousScreen() {
             onPress={() => handleCardPress(session)}
             activeOpacity={0.7}>
             <ThemedView style={styles.cardHeader}>
-              <ThemedText type="defaultSemiBold" style={styles.date}>
-                {session.createdAt ? new Date(session.createdAt).toLocaleDateString() : ''}
-              </ThemedText>
               <ThemedView
                 style={[
                   styles.focusBadge,
@@ -159,61 +300,71 @@ export default function PreviousScreen() {
                 ]}>
                 <ThemedText style={styles.focusText}>{session.focusArea}</ThemedText>
               </ThemedView>
+              <ThemedText type="defaultSemiBold" style={styles.date}>
+                {session.createdAt ? new Date(session.createdAt).toLocaleDateString() : ''}
+              </ThemedText>
             </ThemedView>
             <ThemedText style={styles.summary} numberOfLines={4}>
               {plan
                 ? `Warmup: ${plan.warmup}\nDrill: ${plan.drill}\nGame: ${plan.game}`
                 : 'No plan available.'}
             </ThemedText>
-            <ThemedView style={styles.cardFooter}>
-              <ThemedText style={styles.tapHint}>Tap to view details</ThemedText>
-            </ThemedView>
           </TouchableOpacity>
         );
       })}
-    </ParallaxScrollView>
+
+      {filteredSessions.length === 0 && sessions.length > 0 && (
+        <ThemedView style={styles.emptyContainer}>
+          <ThemedText style={styles.emptyText}>
+            No sessions found for the selected filters.
+          </ThemedText>
+        </ThemedView>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    marginTop: 16,
+    padding: 24,
   },
   titleContainer: {
     flexDirection: 'row',
-    gap: 8,
     marginBottom: 16,
   },
   card: {
-    padding: 16,
-    marginBottom: 16,
-    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    borderRadius: 20,
+    // Neumorphic shadow - light source from top-left
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 8, height: 8 },
     shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowRadius: 16,
+    elevation: 8,
+    // Inner shadow effect for depth
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    // Subtle gradient background
+    backgroundColor: 'rgba(248, 250, 252, 0.95)',
   },
   cardEven: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderLeftWidth: 4,
-    borderLeftColor: '#4ECDC4',
+    // Remove the left border color
   },
   cardOdd: {
     backgroundColor: 'rgba(248, 250, 252, 0.95)',
-    borderLeftWidth: 4,
-    borderLeftColor: '#FF6B6B',
+    // Remove the left border color
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   date: {
     fontSize: 16,
@@ -221,9 +372,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   focusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    // Neumorphic effect for the badge
+    shadowColor: '#000',
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   focusText: {
     color: '#FFFFFF',
@@ -238,15 +395,6 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     marginBottom: 8,
   },
-  cardFooter: {
-    alignItems: 'flex-end',
-    marginTop: 4,
-  },
-  tapHint: {
-    fontSize: 12,
-    opacity: 0.6,
-    fontStyle: 'italic',
-  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -257,5 +405,43 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
     opacity: 0.7,
+  },
+  filterSection: {
+    marginBottom: 20,
+  },
+  filterLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    opacity: 0.8,
+  },
+  filterScroll: {
+    flexDirection: 'row',
+  },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    shadowColor: '#000',
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  filterChipActive: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  filterChipText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: 'rgba(0, 0, 0, 0.7)',
+  },
+  filterChipTextActive: {
+    color: '#FFFFFF',
   },
 });

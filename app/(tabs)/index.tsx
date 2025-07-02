@@ -1,10 +1,8 @@
-import { Image } from 'expo-image';
-import { useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Easing, ScrollView, StyleSheet } from 'react-native';
 
 import { HelloWave } from '@/components/HelloWave';
 import NewPracticeSessionModal from '@/components/NewPracticeSessionModal';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import PracticePlanView from '@/components/PracticePlanView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -27,6 +25,27 @@ export default function HomeScreen() {
   const trpc = useTRPC();
   const generateChatMutation = useMutation(trpc.chat.create.mutationOptions());
   const createPracticeSessionMutation = useMutation(trpc.practiceSession.create.mutationOptions());
+
+  const tennisBallAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(tennisBallAnim, {
+          toValue: -18,
+          duration: 350,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(tennisBallAnim, {
+          toValue: 0,
+          duration: 350,
+          easing: Easing.in(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
 
   const handleSignIn = async (email: string, password: string) => {
     await signIn(email, password);
@@ -98,26 +117,36 @@ export default function HomeScreen() {
 
   if (user) {
     return (
-      <ParallaxScrollView
-        headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-        headerImage={
-          <Image source={require('@/assets/images/icon.png')} style={styles.reactLogo} />
-        }>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <ThemedView style={styles.centeredContainer}>
-          <ThemedView style={styles.titleRow}>
+          <ThemedView style={styles.welcomeBlock}>
             <ThemedText type="title" style={styles.welcomeTitle}>
-              Welcome back, {user.name || user.email}!
+              Welcome back,
             </ThemedText>
-            <HelloWave />
+            <ThemedText type="title" style={styles.userName}>
+              {user.name || user.email}!
+            </ThemedText>
+            <ThemedText type="defaultSemiBold" style={styles.welcomeText}>
+              Ready to improve your game today?
+            </ThemedText>
           </ThemedView>
-          <ThemedText type="defaultSemiBold" style={styles.welcomeText}>
-            Successfully signed in to Courtly.
-          </ThemedText>
+          <Animated.Text
+            style={{
+              fontSize: 40,
+              alignSelf: 'center',
+              marginBottom: -2,
+              marginTop: 16,
+              transform: [{ translateY: tennisBallAnim }],
+            }}
+            accessible
+            accessibilityLabel="Tennis ball emoji">
+            🎾
+          </Animated.Text>
           <Button
             variant="default"
             className="w-full"
             onPress={() => setShowModal(true)}
-            style={{ marginBottom: 16 }}>
+            style={{ marginBottom: 16, marginTop: 0 }}>
             <ThemedText>New Practice Session</ThemedText>
           </Button>
           <Button variant="outline" onPress={signOut} style={styles.signOutButton}>
@@ -134,14 +163,12 @@ export default function HomeScreen() {
           onClose={() => setShowModal(false)}
           onCreate={handleCreateSession}
         />
-      </ParallaxScrollView>
+      </ScrollView>
     );
   }
 
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={<Image source={require('@/assets/images/icon.png')} style={styles.reactLogo} />}>
+    <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="title">Welcome to Courtly</ThemedText>
         <HelloWave />
@@ -153,11 +180,18 @@ export default function HomeScreen() {
           <SignInForm onSubmit={handleSignIn} onSwitchToSignUp={handleSwitchToSignUp} />
         )}
       </ThemedView>
-    </ParallaxScrollView>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 32,
+    gap: 16,
+  },
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -166,13 +200,6 @@ const styles = StyleSheet.create({
   stepContainer: {
     gap: 8,
     marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
   },
   loadingContainer: {
     flex: 1,
@@ -187,19 +214,26 @@ const styles = StyleSheet.create({
     paddingTop: 32,
     paddingBottom: 32,
   },
-  titleRow: {
-    flexDirection: 'row',
+  welcomeBlock: {
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 18,
+    marginBottom: 8,
   },
   welcomeTitle: {
     textAlign: 'center',
-    flexShrink: 1,
+    fontWeight: 'bold',
+    fontSize: 28,
+    color: '#222',
+  },
+  userName: {
+    textAlign: 'center',
+    fontWeight: 'bold',
+    fontSize: 24,
+    color: '#4ECDC4',
+    marginBottom: 8,
   },
   welcomeText: {
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 0,
     lineHeight: 24,
     fontSize: 17,
     opacity: 0.85,
