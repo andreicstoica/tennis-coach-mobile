@@ -55,7 +55,11 @@ export default function NewPracticeSessionModal({
             <ThemedText style={{ color: 'red', marginBottom: 8 }}>{error}</ThemedText>
           ) : null}
           <Button onPress={onCreate} disabled={loading}>
-            {loading ? <ActivityIndicator color="#fff" /> : <ThemedText>Create</ThemedText>}
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <ThemedText style={{ color: 'white' }}>Create</ThemedText>
+            )}
           </Button>
           <Button variant="outline" onPress={onClose} style={{ marginTop: 8 }} disabled={loading}>
             <ThemedText>Cancel</ThemedText>

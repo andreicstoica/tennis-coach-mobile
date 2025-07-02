@@ -37,6 +37,24 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "fonts": [
+      {
+        "asset": "./assets/fonts/IBMPlexSans-Regular.ttf",
+        "family": "IBMPlexSans"
+      },
+      {
+        "asset": "./assets/fonts/IBMPlexSans-Medium.ttf",
+        "family": "IBMPlexSans-Medium"
+      },
+      {
+        "asset": "./assets/fonts/IBMPlexSans-SemiBold.ttf",
+        "family": "IBMPlexSans-SemiBold"
+      },
+      {
+        "asset": "./assets/fonts/IBMPlexSans-Bold.ttf",
+        "family": "IBMPlexSans-Bold"
+      }
+    ]
   }
 }

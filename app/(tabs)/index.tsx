@@ -147,7 +147,7 @@ export default function HomeScreen() {
             className="w-full"
             onPress={() => setShowModal(true)}
             style={{ marginBottom: 16, marginTop: 0 }}>
-            <ThemedText>New Practice Session</ThemedText>
+            <ThemedText style={{ color: 'white' }}>New Practice Session</ThemedText>
           </Button>
           {plan && <PracticePlanView plan={plan} />}
         </ThemedView>

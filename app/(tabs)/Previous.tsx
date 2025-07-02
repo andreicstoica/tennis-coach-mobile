@@ -181,7 +181,7 @@ export default function PreviousScreen() {
       return '#87CEEB'; // Sky blue for approach shots
     }
     if (/lob|overhead/.test(normalizedFocus)) {
-      return '#98FB98'; // Pale green for lobs/overheads
+      return '#98FB98'; // Pale gree@n for lobs/overheads
     }
     if (/footwork|movement|agility/.test(normalizedFocus)) {
       return '#FF8C42'; // Orange-red for footwork
