@@ -2,17 +2,24 @@ import { ThemedText } from '~/components/ThemedText';
 import { ThemedView } from '~/components/ThemedView';
 import { useColorScheme } from '~/hooks/useColorScheme';
 
-import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useQuery } from '@tanstack/react-query';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
+import * as Haptics from 'expo-haptics';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import z from 'zod';
 
 import { authClient } from '~/lib/auth-client';
 import { useAuth } from '~/lib/auth-context';
-import { useTRPC } from '~/lib/trpc/trpc';
 
 const ChatMessageSchema = z.object({
   id: z.string(),
@@ -30,33 +37,296 @@ const ChatSchema = z.object({
   messages: z.array(ChatMessageSchema),
 });
 
+// Simple markdown parser component
+const MarkdownText = ({ content, style }: { content: string; style?: any }) => {
+  const renderMarkdown = (text: string) => {
+    // Handle headers (# ## ###)
+    text = text.replace(/^(#{1,3})\s+(.*$)/gm, (match, hashes, title) => {
+      const level = hashes.length;
+      return `<HEADER_${level}>${title}</HEADER_${level}>`;
+    });
+
+    // Handle bold (**text**)
+    text = text.replace(/\*\*(.*?)\*\*/g, '<BOLD>$1</BOLD>');
+
+    // Handle italic (*text*)
+    text = text.replace(/\*(.*?)\*/g, '<ITALIC>$1</ITALIC>');
+
+    // Split by our custom tags and render
+    const segments = text.split(
+      /(<HEADER_[1-3]>.*?<\/HEADER_[1-3]>|<BOLD>.*?<\/BOLD>|<ITALIC>.*?<\/ITALIC>)/g
+    );
+
+    return segments.map((segment, index) => {
+      if (segment.startsWith('<HEADER_1>')) {
+        return (
+          <Text
+            key={index}
+            style={[style, { fontSize: 20, fontWeight: 'bold', marginVertical: 8 }]}>
+            {segment.replace(/<\/?HEADER_1>/g, '')}
+          </Text>
+        );
+      } else if (segment.startsWith('<HEADER_2>')) {
+        return (
+          <Text
+            key={index}
+            style={[style, { fontSize: 18, fontWeight: 'bold', marginVertical: 6 }]}>
+            {segment.replace(/<\/?HEADER_2>/g, '')}
+          </Text>
+        );
+      } else if (segment.startsWith('<HEADER_3>')) {
+        return (
+          <Text
+            key={index}
+            style={[style, { fontSize: 16, fontWeight: 'bold', marginVertical: 4 }]}>
+            {segment.replace(/<\/?HEADER_3>/g, '')}
+          </Text>
+        );
+      } else if (segment.startsWith('<BOLD>')) {
+        return (
+          <Text key={index} style={[style, { fontWeight: 'bold' }]}>
+            {segment.replace(/<\/?BOLD>/g, '')}
+          </Text>
+        );
+      } else if (segment.startsWith('<ITALIC>')) {
+        return (
+          <Text key={index} style={[style, { fontStyle: 'italic' }]}>
+            {segment.replace(/<\/?ITALIC>/g, '')}
+          </Text>
+        );
+      } else {
+        return (
+          <Text key={index} style={style}>
+            {segment}
+          </Text>
+        );
+      }
+    });
+  };
+
+  return <View>{renderMarkdown(content)}</View>;
+};
+
+// Accordion component for practice plan sections
+const PracticePlanAccordion = ({ content, textStyle }: { content: string; textStyle?: any }) => {
+  const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
+    warmup: false,
+    drill: true, // Default open
+    game: false,
+  });
+
+  const toggleSection = (section: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
+
+  // Improved parsing logic - more robust section detection
+  const parsePracticePlan = (text: string) => {
+    const sections = {
+      warmup: '',
+      drill: '',
+      game: '',
+    };
+
+    // Split content by lines for easier parsing
+    const lines = text.split('\n');
+    let currentSection = '';
+    let currentContent: string[] = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      const lowerLine = line.toLowerCase();
+
+      // Check if this line starts a new section - more flexible warmup detection
+      if (
+        lowerLine.includes('warmup') &&
+        (lowerLine.startsWith('warmup') ||
+          lowerLine.startsWith('#') ||
+          lowerLine.includes(':') ||
+          lowerLine.match(/^\s*warmup/))
+      ) {
+        // Save previous section if exists
+        if (currentSection && currentContent.length > 0) {
+          sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
+        }
+        currentSection = 'warmup';
+        currentContent = [];
+
+        // Add any content after the section header on the same line
+        const headerMatch = line.match(/warmup\s*:?\s*(.*)/i);
+        if (headerMatch && headerMatch[1].trim()) {
+          currentContent.push(headerMatch[1].trim());
+        }
+      } else if (
+        lowerLine.includes('drill') &&
+        (lowerLine.startsWith('drill') ||
+          lowerLine.startsWith('#') ||
+          lowerLine.includes(':') ||
+          lowerLine.match(/^\s*drill/))
+      ) {
+        // Save previous section if exists
+        if (currentSection && currentContent.length > 0) {
+          sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
+        }
+        currentSection = 'drill';
+        currentContent = [];
+
+        // Add any content after the section header on the same line
+        const headerMatch = line.match(/drill\s*:?\s*(.*)/i);
+        if (headerMatch && headerMatch[1].trim()) {
+          currentContent.push(headerMatch[1].trim());
+        }
+      } else if (
+        lowerLine.includes('game') &&
+        (lowerLine.startsWith('game') ||
+          lowerLine.startsWith('#') ||
+          lowerLine.includes(':') ||
+          lowerLine.match(/^\s*game/))
+      ) {
+        // Save previous section if exists
+        if (currentSection && currentContent.length > 0) {
+          sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
+        }
+        currentSection = 'game';
+        currentContent = [];
+
+        // Add any content after the section header on the same line
+        const headerMatch = line.match(/game\s*:?\s*(.*)/i);
+        if (headerMatch && headerMatch[1].trim()) {
+          currentContent.push(headerMatch[1].trim());
+        }
+      } else if (currentSection) {
+        // Add content to current section
+        currentContent.push(line);
+      }
+    }
+
+    // Save the last section
+    if (currentSection && currentContent.length > 0) {
+      sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
+    }
+
+    return sections;
+  };
+
+  const sections = parsePracticePlan(content);
+  const hasValidSections = sections.warmup || sections.drill || sections.game;
+
+  if (!hasValidSections) {
+    return <MarkdownText content={content} style={textStyle} />;
+  }
+
+  const sectionIcons = {
+    warmup: '🏃‍♂️',
+    drill: '🎯',
+    game: '🎾',
+  };
+
+  const sectionColors = {
+    warmup: '#FF6B6B',
+    drill: '#4ECDC4',
+    game: '#45B7D1',
+  };
+
+  // Check if all sections are collapsed
+  const allCollapsed =
+    !expandedSections.warmup && !expandedSections.drill && !expandedSections.game;
+
+  return (
+    <View style={styles.accordionContainer}>
+      {/* Show a preview when all sections are collapsed */}
+      {allCollapsed && (
+        <View style={styles.collapsedPreview}>
+          <Text style={[textStyle, styles.previewText]}>
+            Practice plan with{' '}
+            {[sections.warmup && 'warmup', sections.drill && 'drill', sections.game && 'game']
+              .filter(Boolean)
+              .join(', ')}{' '}
+            sections
+          </Text>
+        </View>
+      )}
+
+      {/* Render sections in specific order: warmup, drill, game */}
+      {['warmup', 'drill', 'game'].map((sectionKey) => {
+        const sectionContent = sections[sectionKey as keyof typeof sections];
+        if (!sectionContent) return null;
+
+        const isExpanded = expandedSections[sectionKey];
+        const icon = sectionIcons[sectionKey as keyof typeof sectionIcons];
+        const color = sectionColors[sectionKey as keyof typeof sectionColors];
+
+        return (
+          <View key={sectionKey} style={styles.accordionSection}>
+            <TouchableOpacity
+              onPress={() => toggleSection(sectionKey)}
+              style={[styles.accordionHeader, { backgroundColor: color }]}
+              activeOpacity={0.7}>
+              <Text style={styles.accordionHeaderText}>
+                {icon} {sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1)}
+              </Text>
+              <Text style={styles.accordionChevron}>{isExpanded ? '▼' : '▶'}</Text>
+            </TouchableOpacity>
+
+            {isExpanded && (
+              <View style={styles.accordionContent}>
+                <MarkdownText content={sectionContent} style={textStyle} />
+              </View>
+            )}
+          </View>
+        );
+      })}
+    </View>
+  );
+};
+
+// Enhanced message content renderer
+const MessageContent = ({
+  message,
+  textStyle,
+}: {
+  message: typeof ChatMessageSchema._type;
+  textStyle?: any;
+}) => {
+  // Improved smart content detection - look for any practice plan indicators
+  const isPracticePlan =
+    message.role === 'assistant' &&
+    /(warmup|drill|game)/i.test(message.content) &&
+    message.content.length > 50; // Content length check instead of line count
+
+  if (isPracticePlan) {
+    return <PracticePlanAccordion content={message.content} textStyle={textStyle} />;
+  }
+
+  // For other assistant messages, use markdown
+  if (message.role === 'assistant') {
+    return <MarkdownText content={message.content} style={textStyle} />;
+  }
+
+  // For user messages, use plain text
+  return <ThemedText style={textStyle}>{message.content}</ThemedText>;
+};
+
 export default function PracticeSession() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const trpc = useTRPC();
   const { colorScheme } = useColorScheme();
-
-  const insets = useSafeAreaInsets();
+  const [chatIdReady, setChatIdReady] = useState(false);
 
   // Get the chatId from the route parameters
+  // make sure it's a string that is ready to send to the server
   const { id: chatId } = useLocalSearchParams<{ id: string }>();
+  useEffect(() => {
+    if (chatId && chatId.length > 0) {
+      setChatIdReady(true);
+    }
+  }, [chatId]);
 
   const isChatIdValid = typeof chatId === 'string' && chatId.length > 0;
   const queryEnabled = !!user && isChatIdValid;
-  console.log('Cookie:', authClient.getCookie());
-
-  console.log(
-    'chatId:',
-    chatId,
-    'isChatIdValid:',
-    isChatIdValid,
-    'user:',
-    user,
-    'queryEnabled:',
-    queryEnabled
-  );
-
-  console.log('Query options:', trpc.chat.get.queryOptions({ chatId }));
 
   // Fetch the chat data using tRPC
   const { data: chat } = useQuery({
@@ -65,8 +335,6 @@ export default function PracticeSession() {
       // Use the exact same format as your working curl command
       const inputJson = JSON.stringify({ json: { chatId } });
       const url = `https://courtly-xi.vercel.app/api/trpc/chat.get?input=${inputJson}`;
-
-      console.log('Manual fetch URL:', url);
 
       const cookies = authClient.getCookie();
       const headers: Record<string, string> = {};
@@ -92,7 +360,6 @@ export default function PracticeSession() {
   const parsedResult = chat?.json ? ChatSchema.safeParse(chat.json) : null;
 
   if (!parsedResult?.success) {
-    console.log('Validation errors:', parsedResult?.error?.issues);
     return (
       <ThemedView style={styles.errorContainer}>
         <ThemedText style={styles.errorText}>Invalid chat data.</ThemedText>
@@ -108,6 +375,28 @@ export default function PracticeSession() {
     );
   }
   const parsedChat = parsedResult.data;
+
+  // Remove duplicate messages with improved deduplication
+  const uniqueMessages = parsedChat.messages
+    ? parsedChat.messages.reduce((acc: typeof parsedChat.messages, message) => {
+        // Check if this message already exists in our accumulator
+        const isDuplicate = acc.some(
+          (existingMessage) =>
+            existingMessage.id === message.id ||
+            (existingMessage.content === message.content &&
+              existingMessage.role === message.role &&
+              Math.abs(
+                new Date(existingMessage.createdAt).getTime() -
+                  new Date(message.createdAt).getTime()
+              ) < 1000)
+        );
+
+        if (!isDuplicate) {
+          acc.push(message);
+        }
+        return acc;
+      }, [])
+    : [];
 
   if (authLoading) {
     return (
@@ -134,31 +423,6 @@ export default function PracticeSession() {
     );
   }
 
-  // if (isLoading) {
-  //   return (
-  //     <ThemedView style={styles.loadingContainer}>
-  //       <ActivityIndicator size="large" color={colorScheme === 'dark' ? '#ffffff' : '#000000'} />
-  //       <ThemedText style={styles.loadingText}>Loading chat...</ThemedText>
-  //     </ThemedView>
-  //   );
-  // }
-
-  // if (error) {
-  //   return (
-  //     <ThemedView style={styles.errorContainer}>
-  //       <ThemedText style={styles.errorText}>Error loading chat: {error.message}</ThemedText>
-  //       <TouchableOpacity
-  //         onPress={() => router.back()}
-  //         style={[
-  //           styles.button,
-  //           { backgroundColor: colorScheme === 'dark' ? '#3b82f6' : '#2563eb' },
-  //         ]}>
-  //         <ThemedText style={styles.buttonText}>Go Back</ThemedText>
-  //       </TouchableOpacity>
-  //     </ThemedView>
-  //   );
-  // }
-
   if (!parsedChat) {
     return (
       <ThemedView style={styles.errorContainer}>
@@ -176,46 +440,49 @@ export default function PracticeSession() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
-      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-        {/* Header */}
-        <ThemedView style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ThemedText style={styles.backButtonText}>← Back</ThemedText>
-          </TouchableOpacity>
-          <ThemedText style={styles.chatTitle}>{parsedChat.name}</ThemedText>
-        </ThemedView>
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <ThemedView style={styles.container}>
+          {/* Header */}
+          <ThemedView style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <ThemedText style={styles.backButtonText}>← Back</ThemedText>
+            </TouchableOpacity>
+            <ThemedText style={styles.chatTitle}>{parsedChat.name}</ThemedText>
+          </ThemedView>
 
-        {/* Messages */}
-        <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
-          {parsedChat.messages && parsedChat.messages.length > 0 ? (
-            parsedChat.messages.map((message: typeof ChatMessageSchema._type, index: number) => (
-              <ThemedView
-                key={message.id || index}
-                style={[
-                  styles.messageContainer,
-                  message.role === 'user' ? styles.userMessage : styles.assistantMessage,
-                ]}>
-                <ThemedText style={styles.messageRole}>
-                  {message.role === 'user' ? 'You' : 'Coach'}
-                </ThemedText>
-                <ThemedText style={styles.messageContent}>{message.content}</ThemedText>
-                <ThemedText style={styles.messageTime}>
-                  {new Date(message.createdAt).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </ThemedText>
+          {/* Messages */}
+          <ScrollView
+            style={styles.messagesContainer}
+            contentContainerStyle={styles.messagesContent}>
+            {uniqueMessages && uniqueMessages.length > 0 ? (
+              uniqueMessages.map((message: typeof ChatMessageSchema._type, index: number) => (
+                <ThemedView
+                  key={`${message.id}-${index}`}
+                  style={[
+                    styles.messageContainer,
+                    message.role === 'user' ? styles.userMessage : styles.assistantMessage,
+                  ]}>
+                  <ThemedText
+                    style={[styles.messageRole, message.role === 'user' && styles.userText]}>
+                    {message.role === 'user' ? 'You' : 'Coach'}
+                  </ThemedText>
+                  <MessageContent
+                    message={message}
+                    textStyle={[styles.messageContent, message.role === 'user' && styles.userText]}
+                  />
+                </ThemedView>
+              ))
+            ) : (
+              <ThemedView style={styles.emptyContainer}>
+                <ThemedText style={styles.emptyText}>No messages in this chat yet.</ThemedText>
               </ThemedView>
-            ))
-          ) : (
-            <ThemedView style={styles.emptyContainer}>
-              <ThemedText style={styles.emptyText}>No messages in this chat yet.</ThemedText>
-            </ThemedView>
-          )}
-        </ScrollView>
-      </ThemedView>
-    </SafeAreaView>
+            )}
+          </ScrollView>
+        </ThemedView>
+      </SafeAreaView>
+    </>
   );
 }
 
@@ -259,7 +526,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0, 0, 0, 0.1)',
   },
@@ -277,18 +544,19 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     textAlign: 'center',
-    marginRight: 40, // Compensate for back button width
+    marginRight: 56, // Compensate for back button width
   },
   messagesContainer: {
     flex: 1,
   },
   messagesContent: {
     padding: 16,
+    paddingBottom: 32,
   },
   messageContainer: {
     marginBottom: 16,
-    padding: 12,
-    borderRadius: 12,
+    padding: 16,
+    borderRadius: 16,
     maxWidth: '85%',
   },
   userMessage: {
@@ -298,11 +566,12 @@ const styles = StyleSheet.create({
   assistantMessage: {
     alignSelf: 'flex-start',
     backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    maxWidth: '95%', // Wider for coach messages with accordions
   },
   messageRole: {
     fontSize: 12,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 6,
     opacity: 0.8,
   },
   messageContent: {
@@ -312,7 +581,7 @@ const styles = StyleSheet.create({
   messageTime: {
     fontSize: 11,
     opacity: 0.6,
-    marginTop: 4,
+    marginTop: 6,
     alignSelf: 'flex-end',
   },
   emptyContainer: {
@@ -323,6 +592,58 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
+    opacity: 0.7,
+    textAlign: 'center',
+  },
+  userText: {
+    color: '#ffffff',
+  },
+  // Accordion styles
+  accordionContainer: {
+    marginVertical: 4,
+  },
+  accordionSection: {
+    marginBottom: 8,
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  accordionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+  },
+  accordionHeaderText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#ffffff',
+    flex: 1,
+  },
+  accordionChevron: {
+    fontSize: 14,
+    color: '#ffffff',
+    fontWeight: '600',
+  },
+  accordionContent: {
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+  collapsedPreview: {
+    padding: 16,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  previewText: {
+    fontSize: 14,
     opacity: 0.7,
     textAlign: 'center',
   },

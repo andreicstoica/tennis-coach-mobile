@@ -7,7 +7,7 @@ import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
 import { IconSymbol } from './ui/IconSymbol';
 
-// 1. Define the Zod schema
+// email/pwd sign in schema
 const signInSchema = z.object({
   email: z.string().email({ message: 'Enter a valid email address' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
@@ -19,20 +19,19 @@ interface SignInFormProps {
   onSwitchToSignUp: () => void;
 }
 
-export function SignInForm({ onSubmit, isLoading = false, onSwitchToSignUp }: SignInFormProps) {
+export function SignInForm({ onSubmit, onSwitchToSignUp }: SignInFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
   const { colorScheme } = useColorScheme();
 
-  // 2. Validate with Zod on submit
+  // validate with Zod on submit
   const handleEmailSignIn = async () => {
     const result = signInSchema.safeParse({ email, password });
 
     if (!result.success) {
-      // Map Zod errors to field errors
+      // map Zod errors to field errors
       const fieldErrors: { email?: string; password?: string } = {};
       result.error.errors.forEach((err) => {
         if (err.path[0] === 'email') fieldErrors.email = err.message;
@@ -42,41 +41,39 @@ export function SignInForm({ onSubmit, isLoading = false, onSwitchToSignUp }: Si
       return;
     }
 
+    // clear any previous errors
     setErrors({});
     setIsSigningIn(true);
 
     try {
-      console.log('SignInForm: Calling onSubmit for email:', email);
-      // Let the parent component handle authentication via auth context
+      // let the parent component handle authentication via auth context
       await onSubmit(email, password);
     } catch (error) {
-      console.error('Sign in error in form:', error);
-      setErrors({
-        email: 'Invalid email or password. Please try again.',
-      });
+      console.error('Sign in error:', error);
+      setErrors({ email: 'Invalid email or password. Please try again.' });
     } finally {
       setIsSigningIn(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
-    setIsGoogleSigningIn(true);
-
     try {
+      setIsSigningIn(true);
+      console.log('Google sign-in: Starting...');
+
       await authClient.signIn.social({
         provider: 'google',
-        callbackURL: '/dashboard', // this will be converted to a deep link (eg. `tenniscoachmobile://dashboard`) on native
+        // No callbackURL - let Better Auth handle the redirect
       });
-      // Google sign-in successful
-      console.log('Google sign in successful');
+
+      // Social sign-in handles the redirect automatically
+      // The auth context will detect the signed-in user when the user returns
+      console.log('Google sign-in: Redirect initiated');
     } catch (error) {
-      console.error('Google sign in error:', error);
-      // Handle Google sign-in errors
-      setErrors({
-        email: 'Google sign-in failed. Please try again.',
-      });
+      console.error('Google sign-in error:', error);
+      setErrors({ email: 'Google sign-in failed. Please try again.' });
     } finally {
-      setIsGoogleSigningIn(false);
+      setIsSigningIn(false);
     }
   };
 
@@ -209,12 +206,12 @@ export function SignInForm({ onSubmit, isLoading = false, onSwitchToSignUp }: Si
         }}
         activeOpacity={0.8}>
         <ThemedText
-          type="defaultSemiBold"
           style={{
             color: '#ffffff',
             fontSize: 16,
+            fontWeight: '600',
           }}>
-          {isSigningIn ? 'Signing In...' : 'Sign In with Email'}
+          {isSigningIn ? 'Signing In...' : 'Sign In'}
         </ThemedText>
       </TouchableOpacity>
 
@@ -253,52 +250,54 @@ export function SignInForm({ onSubmit, isLoading = false, onSwitchToSignUp }: Si
       {/* Google Sign In Button */}
       <TouchableOpacity
         onPress={handleGoogleSignIn}
-        disabled={isGoogleSigningIn}
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: colorScheme === 'dark' ? '#111827' : '#fff',
-          borderWidth: 1,
-          borderColor: colorScheme === 'dark' ? '#374151' : '#d1d5db',
+          backgroundColor: colorScheme === 'dark' ? '#374151' : '#f3f4f6',
           padding: 16,
           borderRadius: 8,
           marginBottom: 16,
+          alignItems: 'center',
+          borderWidth: 1,
+          borderColor: colorScheme === 'dark' ? '#4b5563' : '#d1d5db',
+          flexDirection: 'row',
+          justifyContent: 'center',
+          gap: 8,
+          width: '100%',
           alignSelf: 'center',
         }}
         activeOpacity={0.8}>
-        <IconSymbol
-          name="globe"
-          size={20}
-          color={colorScheme === 'dark' ? '#fff' : '#000'}
-          style={{ marginRight: 8 }}
-        />
+        <IconSymbol name="globe" size={20} color={colorScheme === 'dark' ? '#ffffff' : '#000000'} />
         <ThemedText
-          type="defaultSemiBold"
           style={{
-            color: colorScheme === 'dark' ? '#fff' : '#000',
+            color: colorScheme === 'dark' ? '#ffffff' : '#000000',
             fontSize: 16,
+            fontWeight: '600',
           }}>
-          {isGoogleSigningIn ? 'Signing In...' : 'Continue with Google'}
+          Continue with Google
         </ThemedText>
       </TouchableOpacity>
 
       {/* Switch to Sign Up */}
-      <TouchableOpacity
-        onPress={onSwitchToSignUp}
-        style={{
-          alignItems: 'center',
-          padding: 12,
-        }}
-        activeOpacity={0.7}>
+      <View style={{ alignItems: 'center', width: '100%', marginTop: 8 }}>
         <ThemedText
           style={{
-            color: colorScheme === 'dark' ? '#3b82f6' : '#2563eb',
-            fontSize: 14,
+            color: colorScheme === 'dark' ? '#9ca3af' : '#6b7280',
+            marginBottom: 8,
+            textAlign: 'center',
           }}>
-          Don&apos;t have an account? Sign Up
+          Don&apos;t have an account?
         </ThemedText>
-      </TouchableOpacity>
+        <TouchableOpacity onPress={onSwitchToSignUp}>
+          <ThemedText
+            style={{
+              color: colorScheme === 'dark' ? '#3b82f6' : '#2563eb',
+              fontSize: 16,
+              fontWeight: '600',
+              textAlign: 'center',
+            }}>
+            Sign Up
+          </ThemedText>
+        </TouchableOpacity>
+      </View>
     </ThemedView>
   );
 }

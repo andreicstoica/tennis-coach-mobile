@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Image, ScrollView, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Image, StyleSheet, View } from 'react-native';
 
 import { HelloWave } from '@/components/HelloWave';
 import NewPracticeSessionModal from '@/components/NewPracticeSessionModal';
@@ -18,14 +18,14 @@ const TennisCourtBackground = () => (
   <View style={styles.tennisCourtBackgroundContainer} pointerEvents="none">
     <Image
       source={require('@/assets/images/background.png')}
-      style={styles.tennisCourtBackground}
+      style={[styles.tennisCourtBackground]}
       resizeMode="cover"
       accessible
       accessibilityLabel="Tennis court in a park background"
     />
     <LinearGradient
-      colors={['rgba(255,255,255,0)', 'rgba(255,255,255,1)']}
-      locations={[0, 1]}
+      colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.8)', 'rgba(255,255,255,1)']}
+      locations={[0, 0.8, 1]}
       start={{ x: 0.5, y: 1 }}
       end={{ x: 0.5, y: 0 }}
       style={styles.tennisCourtGradient}
@@ -129,7 +129,7 @@ export default function HomeScreen() {
 
   if (isLoading) {
     return (
-      <ThemedView style={styles.loadingContainer}>
+      <ThemedView lightColor="white" style={styles.loadingContainer}>
         <ThemedText type="title">Loading...</ThemedText>
       </ThemedView>
     );
@@ -139,41 +139,39 @@ export default function HomeScreen() {
     return (
       <ThemedView style={styles.container}>
         <TennisCourtBackground />
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-          <ThemedView style={styles.centeredContainer}>
-            <ThemedView style={styles.welcomeBlock}>
-              <ThemedText type="title" style={styles.welcomeTitle}>
-                Welcome back,
-              </ThemedText>
-              <ThemedText type="title" style={styles.userName}>
-                {user.name || user.email}!
-              </ThemedText>
-              <ThemedText type="defaultSemiBold" style={styles.welcomeText}>
-                Ready to improve your game today?
-              </ThemedText>
-            </ThemedView>
-            <Animated.Text
-              style={{
-                fontSize: 40,
-                alignSelf: 'center',
-                marginBottom: -2,
-                marginTop: 16,
-                transform: [{ translateY: tennisBallAnim }],
-              }}
-              accessible
-              accessibilityLabel="Tennis ball emoji">
-              🎾
-            </Animated.Text>
-            <Button
-              variant="default"
-              className="w-full"
-              onPress={() => setShowModal(true)}
-              style={{ marginBottom: 16, marginTop: 0 }}>
-              <ThemedText style={{ color: 'white' }}>New Practice Session</ThemedText>
-            </Button>
-            {plan && <PracticePlanView plan={plan} />}
+        <ThemedView style={styles.centeredContainer}>
+          <ThemedView style={styles.welcomeBlock}>
+            <ThemedText type="title" style={styles.welcomeTitle}>
+              Welcome back,
+            </ThemedText>
+            <ThemedText type="title" style={styles.userName}>
+              {user.name || user.email}!
+            </ThemedText>
+            <ThemedText type="defaultSemiBold" style={styles.welcomeText}>
+              Ready to improve your game today?
+            </ThemedText>
           </ThemedView>
-        </ScrollView>
+          <Animated.Text
+            style={{
+              fontSize: 40,
+              alignSelf: 'center',
+              marginBottom: -2,
+              marginTop: 16,
+              transform: [{ translateY: tennisBallAnim }],
+            }}
+            accessible
+            accessibilityLabel="Tennis ball emoji">
+            🎾
+          </Animated.Text>
+          <Button
+            variant="default"
+            className="max-w-lg"
+            onPress={() => setShowModal(true)}
+            style={{ marginBottom: 16, marginTop: 0 }}>
+            <ThemedText style={{ color: 'white' }}>New Practice Session</ThemedText>
+          </Button>
+          {plan && <PracticePlanView plan={plan} />}
+        </ThemedView>
         <NewPracticeSessionModal
           visible={showModal}
           loading={loading}
@@ -188,23 +186,23 @@ export default function HomeScreen() {
   }
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView lightColor="transparent" style={styles.container}>
       <TennisCourtBackground />
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <ThemedView style={styles.titleContainer}>
+      <ThemedView style={styles.contentContainer}>
+        <ThemedView lightColor="transparent" style={styles.titleContainer}>
           <ThemedText type="title">Welcome to Courtly</ThemedText>
         </ThemedView>
-        <ThemedView style={styles.waveContainer}>
+        <ThemedView lightColor="transparent" style={styles.waveContainer}>
           <HelloWave />
         </ThemedView>
-        <ThemedView style={styles.stepContainer}>
+        <ThemedView lightColor="transparent" style={styles.stepContainer}>
           {showSignUp ? (
             <SignUpForm onSubmit={handleSignUp} onSwitchToSignIn={handleSwitchToSignIn} />
           ) : (
             <SignInForm onSubmit={handleSignIn} onSwitchToSignUp={handleSwitchToSignUp} />
           )}
         </ThemedView>
-      </ScrollView>
+      </ThemedView>
     </ThemedView>
   );
 }
@@ -213,15 +211,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     position: 'relative',
+    backgroundColor: 'white',
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
+  contentContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
+    zIndex: 2, // Above the background
   },
   titleContainer: {
     flexDirection: 'row',
@@ -252,6 +249,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 16,
+    zIndex: 2, // Above the background
   },
   welcomeBlock: {
     alignItems: 'center',
@@ -284,7 +283,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    zIndex: -1,
+    zIndex: 1, // Above the white background, below the content
     alignSelf: 'center',
   },
   tennisCourtBackground: {

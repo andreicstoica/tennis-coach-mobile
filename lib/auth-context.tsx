@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { AppState } from 'react-native';
 import { authClient } from './auth-client';
 
 interface AuthContextType {
@@ -41,7 +42,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Check for existing session on app start
   const checkSession = async () => {
     try {
+      console.log('Auth context: Checking session...');
       const session = await authClient.getSession();
+      console.log('Auth context: Session result:', session);
+
       if (session?.data?.user) {
         setUser(session.data.user);
         console.log('Found existing user:', session.data.user.email);
@@ -68,12 +72,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       console.log('Auth context: Sign in result:', result);
 
+      // Check for both success and error cases
+      if (result.error) {
+        console.error('Auth context: Sign in error from server:', result.error);
+        throw new Error(result.error.message || 'Sign in failed');
+      }
+
       if (result.data?.user) {
         console.log('Auth context: Setting user state:', result.data.user.email);
         setUser(result.data.user);
         // Don't navigate here - let the onboarding flow handle it
       } else {
-        throw new Error('No user data received');
+        console.error('Auth context: No user data in result:', result);
+        throw new Error('No user data received from authentication server');
       }
     } catch (error) {
       console.error('Auth context: Sign in error:', error);
@@ -102,6 +113,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     checkSession();
+
+    // Listen for app state changes to detect when user returns from OAuth
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'active') {
+        console.log('App became active, checking session for OAuth redirect...');
+        // Small delay to ensure OAuth processing is complete
+        setTimeout(() => {
+          checkSession();
+        }, 500);
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      subscription?.remove();
+    };
   }, []);
 
   return (

@@ -87,7 +87,7 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
     try {
       await authClient.signIn.social({
         provider: 'google',
-        callbackURL: '/dashboard',
+        // No callbackURL - let Better Auth handle the redirect
       });
       console.log('Google sign up successful');
     } catch (error) {
