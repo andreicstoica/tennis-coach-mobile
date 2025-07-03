@@ -57,56 +57,23 @@ This flow allows users to create a new practice session from the Home tab. The u
 
 ## API Integration Details
 
-- **practiceSession.create**
-  - Method: `mutation`
-  - Input: `{ focus: string }`
-  - Output: `{ id: string, focus: string, ... }`
-  - [See implementation](https://github.com/andreicstoica/tennis-coach/blob/main/src/server/api/routers/practice-session.ts)
+### Query/Mutation Patterns
 
-- **chat.create**
-  - Method: `mutation`
-  - Input: `{ sessionId: string, message: string }`
-  - Output: `{ id: string, messages: [...], aiResponse: { warmup, drill, minigame } }`
-  - [See implementation](https://github.com/andreicstoica/tennis-coach/blob/main/src/server/api/routers/chat.ts)
+Based on the existing `[id].tsx` implementation, API calls must follow specific patterns:
 
----
+**For Queries (GET operations):**
 
-## Requirements
+```
+   const inputJson = JSON.stringify({ json: { focus: focus.trim() } });
+   const url = `https://courtly-xi.vercel.app/api/trpc/practiceSession.create?input=${inputJson}`;
+   const response = await fetch(url, { method: 'POST', headers });
+```
 
-- **UI Components**
-  - Home tab with "New Practice Session" button.
-  - Modal/screen for focus input.
-  - Loading state while waiting for backend.
-  - Error handling for API failures.
-  - Practice plan display.
+2. **Chat Creation**:
+   ```typescript
+   const chatInputJson = JSON.stringify({ json: { practiceSessionId } });
+   const chatUrl = `https://courtly-xi.vercel.app/api/trpc/chat.create?input=${chatInputJson}`;
+   const chatResponse = await fetch(chatUrl, { method: 'POST', headers });
+   ```
 
-- **Data Handling**
-  - Store session and chat data in DB, should be handled by tRPC.
-  - Support for session history.
-
-- **Edge Cases**
-  - Handle backend or AI errors gracefully.
-
----
-
-## Success Criteria
-
-- Users can create a new practice session from the Home tab.
-- The focus is sent to the backend and a session is created.
-- The AI reliably generates a practice plan.
-- The plan is clearly presented and actionable.
-- Sessions are saved and accessible in history.
-
----
-
-## References
-
-- [practice-session.ts (TRPC endpoint)](https://github.com/andreicstoica/tennis-coach/blob/main/src/server/api/routers/practice-session.ts)
-- [chat.ts (TRPC endpoint)](https://github.com/andreicstoica/tennis-coach/blob/main/src/server/api/routers/chat.ts)
-
----
-
-## Future Enhancements
-
-- Add multimedia (videos, images) to drills/minigames.
-- support for adding location to the practice session from the mobile device (will need a practice-session table update in the DB to include an optional location field.) this will support a future feature to collect badges for practice-sessions created at NYC public tennis courts (like central park, fort greene, etc.)
+This should now work reliably since it mirrors the exact pattern you've proven works in your existing chat functionality. The flow will create the practice session, create the associated chat, and navigate directly to the chat screen - all with proper error handling and user feedback.
