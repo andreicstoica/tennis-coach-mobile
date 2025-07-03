@@ -1,11 +1,13 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
+
 import { useAuth } from '@/lib/auth-context';
 import { useTRPC } from '@/lib/trpc/trpc';
 import { useQuery } from '@tanstack/react-query';
-import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+
+import * as Haptics from 'expo-haptics';
 import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -338,24 +340,21 @@ export default function PreviousScreen() {
                 {plan ? (
                   <>
                     <ThemedText style={styles.coverRow} numberOfLines={1} ellipsizeMode="tail">
-                      <ThemedText style={styles.coverEmoji}>🔥</ThemedText>
                       <ThemedText style={styles.coverLabel}> Warmup: </ThemedText>
                       {plan.warmup}
                     </ThemedText>
                     <ThemedText style={styles.coverRow} numberOfLines={1} ellipsizeMode="tail">
-                      <ThemedText style={styles.coverEmoji}>🏋️‍♂️</ThemedText>
                       <ThemedText style={styles.coverLabel}> Drill: </ThemedText>
                       {plan.drill}
                     </ThemedText>
                     <ThemedText style={styles.coverRow} numberOfLines={1} ellipsizeMode="tail">
-                      <ThemedText style={styles.coverEmoji}>🤺</ThemedText>
                       <ThemedText style={styles.coverLabel}> Game: </ThemedText>
                       {plan.game}
                     </ThemedText>
                   </>
                 ) : (
                   <ThemedText style={styles.coverText} numberOfLines={2} ellipsizeMode="tail">
-                    <ThemedText style={styles.coverEmoji}>📝</ThemedText> No plan available.
+                    No plan available.
                   </ThemedText>
                 )}
               </ThemedView>
@@ -513,8 +512,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    borderBottomLeftRadius: 6,
-    borderBottomRightRadius: 6,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     minHeight: 38,
   },
   spineText: {
@@ -533,8 +532,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFDF7',
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-    borderTopLeftRadius: 6,
-    borderTopRightRadius: 6,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
     padding: 18,
     borderWidth: 1.5,
     borderColor: '#E5E5E5',
@@ -551,10 +550,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#007AFF',
     fontSize: 14,
-  },
-  coverEmoji: {
-    fontSize: 16,
-    marginRight: 2,
   },
   coverRow: {
     fontSize: 15,

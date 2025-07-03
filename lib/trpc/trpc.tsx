@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpLink } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import { useState } from 'react';
 import { authClient } from '../auth-client';
@@ -25,7 +25,7 @@ export function TRPCClientProvider(props: { children: React.ReactNode }) {
   const [trpcClient] = useState(() =>
     createTRPCClient<AppRouter>({
       links: [
-        httpBatchLink({
+        httpLink({
           url: 'https://courtly-xi.vercel.app/api/trpc',
           headers() {
             const headers = new Map<string, string>();
