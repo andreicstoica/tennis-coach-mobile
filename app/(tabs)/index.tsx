@@ -4,12 +4,9 @@ import { Animated, Easing, Image, StyleSheet, View } from 'react-native';
 
 import { HelloWave } from '@/components/HelloWave';
 import NewPracticeSessionModal from '@/components/NewPracticeSessionModal';
-import PracticePlanView from '@/components/PracticePlanView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Button } from '@/components/ui/button';
-import { useTRPC } from '@/lib/trpc/trpc';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { SignInForm } from '~/components/SignInForm';
 import { SignUpForm } from '~/components/SignUpForm';
 import { useAuth } from '~/lib/auth-context';
@@ -37,14 +34,6 @@ export default function HomeScreen() {
   const { user, isLoading, signIn } = useAuth();
   const [showSignUp, setShowSignUp] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [focus, setFocus] = useState('');
-  const [plan, setPlan] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const trpc = useTRPC();
-  const generateChatMutation = useMutation(trpc.chat.create.mutationOptions());
-  const createPracticeSessionMutation = useMutation(trpc.practiceSession.create.mutationOptions());
 
   const tennisBallAnim = useRef(new Animated.Value(0)).current;
 
@@ -82,49 +71,6 @@ export default function HomeScreen() {
 
   const handleSwitchToSignIn = () => {
     setShowSignUp(false);
-  };
-
-  const handleCreateSession = async () => {
-    if (!focus.trim()) {
-      setError('Please enter a focus for your session.');
-      return;
-    }
-    setLoading(true);
-    setError('');
-    setPlan(null);
-    try {
-      console.log('Creating practice session with focus:', focus);
-      // 1. Create practice session
-      const sessions = await createPracticeSessionMutation.mutate({ focus: focus });
-      console.log('Practice session created:', sessions);
-      const session = Array.isArray(sessions) ? sessions[0] : sessions;
-      if (!session?.id) throw new Error('Failed to create session.');
-      console.log('Session ID:', session.id);
-
-      // 2. Create chat for this session
-      console.log('Creating chat for session:', session.id);
-      const generateChatMutation = useMutation(trpc.chat.create.mutationOptions());
-      generateChatMutation.mutate({ practiceSessionId: session.id });
-      console.log('Chat created with ID:', session.id);
-
-      // 3. Fetch session by id to get plan
-      const queryClient = useQueryClient();
-      console.log('Fetching updated session:', session.id);
-      const updatedSession = useQuery(trpc.practiceSession.get.queryOptions({ id: session.id }));
-      console.log('Updated session:', updatedSession);
-    } catch (err) {
-      console.error('Error creating practice session:', err);
-      const error = err as Error;
-      console.error('Error details:', {
-        name: error?.name,
-        message: error?.message,
-        stack: error?.stack,
-        cause: error?.cause,
-      });
-      setError(error?.message || 'Something went wrong.');
-    } finally {
-      setLoading(false);
-    }
   };
 
   if (isLoading) {
@@ -170,17 +116,8 @@ export default function HomeScreen() {
             style={{ marginBottom: 16, marginTop: 0 }}>
             <ThemedText style={{ color: 'white' }}>New Practice Session</ThemedText>
           </Button>
-          {plan && <PracticePlanView plan={plan} />}
         </ThemedView>
-        <NewPracticeSessionModal
-          visible={showModal}
-          loading={loading}
-          error={error}
-          focus={focus}
-          setFocus={setFocus}
-          onClose={() => setShowModal(false)}
-          onCreate={handleCreateSession}
-        />
+        <NewPracticeSessionModal visible={showModal} onClose={() => setShowModal(false)} />
       </ThemedView>
     );
   }

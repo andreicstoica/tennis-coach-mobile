@@ -57,50 +57,63 @@ const MarkdownText = ({ content, style }: { content: string; style?: any }) => {
       /(<HEADER_[1-3]>.*?<\/HEADER_[1-3]>|<BOLD>.*?<\/BOLD>|<ITALIC>.*?<\/ITALIC>)/g
     );
 
-    return segments.map((segment, index) => {
-      if (segment.startsWith('<HEADER_1>')) {
+    // Group segments by lines to keep inline elements together
+    const lines = text.split('\n');
+    return lines.map((line, lineIndex) => {
+      // Check if this line has headers
+      if (line.match(/^#{1,3}\s+/)) {
+        const headerMatch = line.match(/^(#{1,3})\s+(.*)/);
+        if (headerMatch) {
+          const level = headerMatch[1].length;
+          const headerStyle =
+            level === 1
+              ? { fontSize: 20, fontWeight: 'bold', marginVertical: 8 }
+              : level === 2
+                ? { fontSize: 18, fontWeight: 'bold', marginVertical: 6 }
+                : { fontSize: 16, fontWeight: 'bold', marginVertical: 4 };
+
+          return (
+            <Text key={lineIndex} style={[style, headerStyle]}>
+              {headerMatch[2]}
+            </Text>
+          );
+        }
+      }
+
+      // For regular lines, process inline formatting
+      const lineSegments = line.split(/(<BOLD>.*?<\/BOLD>|<ITALIC>.*?<\/ITALIC>)/g);
+
+      // Only render if line has content
+      if (line.trim() === '') {
         return (
-          <Text
-            key={index}
-            style={[style, { fontSize: 20, fontWeight: 'bold', marginVertical: 8 }]}>
-            {segment.replace(/<\/?HEADER_1>/g, '')}
-          </Text>
-        );
-      } else if (segment.startsWith('<HEADER_2>')) {
-        return (
-          <Text
-            key={index}
-            style={[style, { fontSize: 18, fontWeight: 'bold', marginVertical: 6 }]}>
-            {segment.replace(/<\/?HEADER_2>/g, '')}
-          </Text>
-        );
-      } else if (segment.startsWith('<HEADER_3>')) {
-        return (
-          <Text
-            key={index}
-            style={[style, { fontSize: 16, fontWeight: 'bold', marginVertical: 4 }]}>
-            {segment.replace(/<\/?HEADER_3>/g, '')}
-          </Text>
-        );
-      } else if (segment.startsWith('<BOLD>')) {
-        return (
-          <Text key={index} style={[style, { fontWeight: 'bold' }]}>
-            {segment.replace(/<\/?BOLD>/g, '')}
-          </Text>
-        );
-      } else if (segment.startsWith('<ITALIC>')) {
-        return (
-          <Text key={index} style={[style, { fontStyle: 'italic' }]}>
-            {segment.replace(/<\/?ITALIC>/g, '')}
-          </Text>
-        );
-      } else {
-        return (
-          <Text key={index} style={style}>
-            {segment}
+          <Text key={lineIndex} style={style}>
+            {'\n'}
           </Text>
         );
       }
+
+      return (
+        <Text key={lineIndex} style={style}>
+          {lineSegments.map((segment, segmentIndex) => {
+            if (segment.startsWith('<BOLD>')) {
+              return (
+                <Text key={segmentIndex} style={[style, { fontWeight: 'bold' }]}>
+                  {segment.replace(/<\/?BOLD>/g, '')}
+                </Text>
+              );
+            } else if (segment.startsWith('<ITALIC>')) {
+              return (
+                <Text key={segmentIndex} style={[style, { fontStyle: 'italic' }]}>
+                  {segment.replace(/<\/?ITALIC>/g, '')}
+                </Text>
+              );
+            } else {
+              return segment;
+            }
+          })}
+          {lineIndex < lines.length - 1 ? '\n' : ''}
+        </Text>
+      );
     });
   };
 
@@ -110,8 +123,8 @@ const MarkdownText = ({ content, style }: { content: string; style?: any }) => {
 // Accordion component for practice plan sections
 const PracticePlanAccordion = ({ content, textStyle }: { content: string; textStyle?: any }) => {
   const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
-    warmup: false,
-    drill: true, // Default open
+    warmup: true, // Default open
+    drill: false,
     game: false,
   });
 
@@ -131,6 +144,11 @@ const PracticePlanAccordion = ({ content, textStyle }: { content: string; textSt
       game: '',
     };
 
+    // DEBUG: Log the full content
+    console.log('=== PARSING PRACTICE PLAN ===');
+    console.log('Full content:', text);
+    console.log('================================');
+
     // Split content by lines for easier parsing
     const lines = text.split('\n');
     let currentSection = '';
@@ -140,14 +158,32 @@ const PracticePlanAccordion = ({ content, textStyle }: { content: string; textSt
       const line = lines[i].trim();
       const lowerLine = line.toLowerCase();
 
-      // Check if this line starts a new section - more flexible warmup detection
+      // DEBUG: Log each line processing
+      console.log(`Line ${i}: "${line}" -> "${lowerLine}"`);
+
+      // Enhanced warmup detection - catch more variations
       if (
-        lowerLine.includes('warmup') &&
+        (lowerLine.includes('warmup') ||
+          lowerLine.includes('warm-up') ||
+          lowerLine.includes('warm up')) &&
         (lowerLine.startsWith('warmup') ||
-          lowerLine.startsWith('#') ||
-          lowerLine.includes(':') ||
-          lowerLine.match(/^\s*warmup/))
+          lowerLine.startsWith('warm-up') ||
+          lowerLine.startsWith('warm up') ||
+          lowerLine.startsWith('# warmup') ||
+          lowerLine.startsWith('# warm-up') ||
+          lowerLine.startsWith('# warm up') ||
+          lowerLine.startsWith('## warmup') ||
+          lowerLine.startsWith('## warm-up') ||
+          lowerLine.startsWith('## warm up') ||
+          lowerLine.startsWith('### warmup') ||
+          lowerLine.startsWith('### warm-up') ||
+          lowerLine.startsWith('### warm up') ||
+          lowerLine.includes('warmup:') ||
+          lowerLine.includes('warm-up:') ||
+          lowerLine.includes('warm up:') ||
+          /^\s*(warmup|warm-up|warm up)/i.test(line))
       ) {
+        console.log(`🔥 WARMUP DETECTED: "${line}"`);
         // Save previous section if exists
         if (currentSection && currentContent.length > 0) {
           sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
@@ -156,17 +192,20 @@ const PracticePlanAccordion = ({ content, textStyle }: { content: string; textSt
         currentContent = [];
 
         // Add any content after the section header on the same line
-        const headerMatch = line.match(/warmup\s*:?\s*(.*)/i);
-        if (headerMatch && headerMatch[1].trim()) {
-          currentContent.push(headerMatch[1].trim());
+        const headerMatch = line.match(/(warmup|warm-up|warm up)\s*:?\s*(.*)/i);
+        if (headerMatch && headerMatch[2].trim()) {
+          currentContent.push(headerMatch[2].trim());
         }
       } else if (
         lowerLine.includes('drill') &&
         (lowerLine.startsWith('drill') ||
-          lowerLine.startsWith('#') ||
-          lowerLine.includes(':') ||
-          lowerLine.match(/^\s*drill/))
+          lowerLine.startsWith('# drill') ||
+          lowerLine.startsWith('## drill') ||
+          lowerLine.startsWith('### drill') ||
+          lowerLine.includes('drill:') ||
+          /^\s*drill/i.test(line))
       ) {
+        console.log(`🎯 DRILL DETECTED: "${line}"`);
         // Save previous section if exists
         if (currentSection && currentContent.length > 0) {
           sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
@@ -182,10 +221,13 @@ const PracticePlanAccordion = ({ content, textStyle }: { content: string; textSt
       } else if (
         lowerLine.includes('game') &&
         (lowerLine.startsWith('game') ||
-          lowerLine.startsWith('#') ||
-          lowerLine.includes(':') ||
-          lowerLine.match(/^\s*game/))
+          lowerLine.startsWith('# game') ||
+          lowerLine.startsWith('## game') ||
+          lowerLine.startsWith('### game') ||
+          lowerLine.includes('game:') ||
+          /^\s*game/i.test(line))
       ) {
+        console.log(`🤺 GAME DETECTED: "${line}"`);
         // Save previous section if exists
         if (currentSection && currentContent.length > 0) {
           sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
@@ -201,6 +243,7 @@ const PracticePlanAccordion = ({ content, textStyle }: { content: string; textSt
       } else if (currentSection) {
         // Add content to current section
         currentContent.push(line);
+        console.log(`📝 Adding to ${currentSection}: "${line}"`);
       }
     }
 
@@ -208,6 +251,13 @@ const PracticePlanAccordion = ({ content, textStyle }: { content: string; textSt
     if (currentSection && currentContent.length > 0) {
       sections[currentSection as keyof typeof sections] = currentContent.join('\n').trim();
     }
+
+    // DEBUG: Log final sections
+    console.log('=== FINAL SECTIONS ===');
+    console.log('Warmup:', sections.warmup);
+    console.log('Drill:', sections.drill);
+    console.log('Game:', sections.game);
+    console.log('=====================');
 
     return sections;
   };
@@ -222,7 +272,7 @@ const PracticePlanAccordion = ({ content, textStyle }: { content: string; textSt
   const sectionIcons = {
     warmup: '🏃‍♂️',
     drill: '🎯',
-    game: '🎾',
+    game: '🤺',
   };
 
   const sectionColors = {
@@ -245,7 +295,7 @@ const PracticePlanAccordion = ({ content, textStyle }: { content: string; textSt
             {[sections.warmup && 'warmup', sections.drill && 'drill', sections.game && 'game']
               .filter(Boolean)
               .join(', ')}{' '}
-            sections
+            sections:
           </Text>
         </View>
       )}

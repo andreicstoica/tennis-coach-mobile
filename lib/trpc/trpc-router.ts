@@ -35,12 +35,6 @@ const practiceSessionSchema = z.object({
     updatedAt: z.string(),
 });
 
-const chatMessageSchema = z.object({
-    id: z.string(),
-    role: z.string(),
-    content: z.string(),
-    createdAt: z.string(),
-});
 
 const chatSchema = z.object({
     id: z.string(),
@@ -48,7 +42,18 @@ const chatSchema = z.object({
     name: z.string(),
     createdAt: z.string(),
     updatedAt: z.string(),
-    messages: z.array(chatMessageSchema),
+    messages: z.array(z.object({
+        id: z.string(),
+        role: z.string(),
+        content: z.string(),
+        createdAt: z.string(),
+        toolInvocations: z.array(z.object({
+            toolCallId: z.string(),
+            toolName: z.string(),
+            args: z.record(z.any()),
+            result: z.any().optional(),
+        })).optional(),
+    })),
 });
 
 export const practiceSessionRouter = t.router({
@@ -63,7 +68,7 @@ export const practiceSessionRouter = t.router({
         .output(practiceSessionSchema.nullable())
         .query(async ({ ctx, input }) => { return [] as any }),
 
-    // Get a practice session by chat ID
+    // Get a practice session by chatId
     getByChatId: t.procedure
         .input(z.object({ chatId: z.string() }))
         .output(practiceSessionSchema.nullable())
@@ -92,12 +97,12 @@ export const chatRouter = t.router({
         }),
     create: t.procedure
         .input(z.object({ practiceSessionId: z.number() }))
-        .output(z.string()) // returns a new chatID
+        .output(z.string()) // returns a new chatId
         .mutation(async ({ ctx, input }) => { return [] as any }),
     saveMessages: t.procedure
         .input(z.object({
             chatId: z.string(),
-            messages: z.array(chatMessageSchema)
+            messages: z.array(z.any())
         }))
         .output(z.object({ success: z.boolean() }))
         .mutation(async ({ ctx, input }) => { return { success: true } }),
