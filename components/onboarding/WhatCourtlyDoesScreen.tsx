@@ -1,6 +1,6 @@
 import { useColorScheme } from '@/hooks/useColorScheme';
 import React, { useEffect, useRef } from 'react';
-import { Animated, Dimensions, StyleSheet, View } from 'react-native';
+import { Animated, Dimensions, Platform, StyleSheet, View } from 'react-native';
 import { OnboardingScreen } from '../OnboardingScreen';
 import { ThemedText } from '../ThemedText';
 
@@ -222,6 +222,12 @@ const styles = StyleSheet.create({
   },
   cardIcon: {
     fontSize: 36,
+    lineHeight: 40, // explicit line height
+    textAlign: 'center',
+    ...(Platform.OS === 'android' && {
+      textAlignVertical: 'center',
+      includeFontPadding: false,
+    }),
   },
   textContainer: {
     alignItems: 'center',

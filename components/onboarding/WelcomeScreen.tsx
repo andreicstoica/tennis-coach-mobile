@@ -1,6 +1,6 @@
 import { useColorScheme } from '@/hooks/useColorScheme';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { OnboardingScreen } from '../OnboardingScreen';
 import { ThemedText } from '../ThemedText';
 
@@ -57,5 +57,11 @@ const styles = StyleSheet.create({
   },
   logoText: {
     fontSize: 48,
+    lineHeight: 60, // explicit line height
+    textAlign: 'center',
+    ...(Platform.OS === 'android' && {
+      textAlignVertical: 'center',
+      includeFontPadding: false,
+    }),
   },
 });

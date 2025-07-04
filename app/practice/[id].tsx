@@ -4,6 +4,7 @@ import { useColorScheme } from '~/hooks/useColorScheme';
 
 import {
   ActivityIndicator,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,21 +22,37 @@ import z from 'zod';
 import { authClient } from '~/lib/auth-client';
 import { useAuth } from '~/lib/auth-context';
 
-const ChatMessageSchema = z.object({
-  id: z.string(),
-  role: z.string(),
-  content: z.string(),
-  createdAt: z.string(),
-});
+const ChatMessageSchema = z
+  .object({
+    id: z.string(),
+    role: z.string(),
+    content: z.string(),
+    createdAt: z.string(),
+    // Make schema more flexible to handle additional fields from AI responses
+    toolInvocations: z
+      .array(
+        z.object({
+          toolCallId: z.string(),
+          toolName: z.string(),
+          args: z.record(z.any()),
+          result: z.any().optional(),
+        })
+      )
+      .optional(),
+    // Allow other fields that might be present
+  })
+  .passthrough(); // This allows additional fields to pass through
 
-const ChatSchema = z.object({
-  id: z.string(),
-  userId: z.string(),
-  name: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  messages: z.array(ChatMessageSchema),
-});
+const ChatSchema = z
+  .object({
+    id: z.string(),
+    userId: z.string(),
+    name: z.string(),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+    messages: z.array(ChatMessageSchema),
+  })
+  .passthrough(); // This allows additional fields to pass through
 
 // Simple markdown parser component
 const MarkdownText = ({ content, style }: { content: string; style?: any }) => {
@@ -360,11 +377,32 @@ const MessageContent = ({
   return <ThemedText style={textStyle}>{message.content}</ThemedText>;
 };
 
+// Add this constant at the top of the file after imports
+const THINKING_MESSAGES = [
+  '🧘 Calming Rublev down...',
+  '🧹 Sweeping the clay for Rafa...',
+  '👯‍♂️ Getting Carlos out of Ibiza...',
+  '🎶 Helping Jannik warm up his voice...',
+  '👌 Setting up the perfect practice session...',
+  '🫦 Nearly there...!',
+  '🎈 Checking gluten-free menu for Novak...',
+  '🛟 Tossing Daniil a stuffy after that R1 exit...',
+  "🕶️ Waiting for Naomi's latest fit...",
+  "🍌 Peeling a perfect banana for Andy's changeover...",
+  "🎥 Rewatching Roger's touching god highlight reel...",
+  "📡 Tracking Ons's drop-shot trajectory...",
+  '🥶 Has Kyrgios said something again...?',
+];
+
 export default function PracticeSession() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const { colorScheme } = useColorScheme();
   const [chatIdReady, setChatIdReady] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [aiTriggered, setAiTriggered] = useState(false); // Move to top level
+  const [waitingForAI, setWaitingForAI] = useState(false);
+  const [currentThinkingIndex, setCurrentThinkingIndex] = useState(0);
 
   // Get the chatId from the route parameters
   // make sure it's a string that is ready to send to the server
@@ -378,8 +416,18 @@ export default function PracticeSession() {
   const isChatIdValid = typeof chatId === 'string' && chatId.length > 0;
   const queryEnabled = !!user && isChatIdValid;
 
+  // Handle pull-to-refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   // Fetch the chat data using tRPC
-  const { data: chat } = useQuery({
+  const { data: chat, refetch } = useQuery({
     queryKey: ['chat', 'get', { chatId }],
     queryFn: async () => {
       // Use the exact same format as your working curl command
@@ -401,33 +449,44 @@ export default function PracticeSession() {
       }
 
       const data = await response.json();
+      console.log('🔍 RAW API RESPONSE:', JSON.stringify(data, null, 2));
       return data.result?.data || data;
     },
     enabled: queryEnabled,
     retry: false,
+    refetchInterval: 3000, // Poll every 3 seconds for new messages
+    refetchIntervalInBackground: false, // Only when app is active
   });
+
+  // DEBUG: Log everything before validation
+  console.log('🔍 CHAT DATA RECEIVED:', JSON.stringify(chat, null, 2));
+  console.log('🔍 CHAT.JSON EXISTS:', !!chat?.json);
+  console.log('🔍 CHAT.JSON CONTENT:', chat?.json ? JSON.stringify(chat.json, null, 2) : 'NULL');
 
   const parsedResult = chat?.json ? ChatSchema.safeParse(chat.json) : null;
 
-  if (!parsedResult?.success) {
-    return (
-      <ThemedView style={styles.errorContainer}>
-        <ThemedText style={styles.errorText}>Invalid chat data.</ThemedText>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={[
-            styles.button,
-            { backgroundColor: colorScheme === 'dark' ? '#3b82f6' : '#2563eb' },
-          ]}>
-          <ThemedText style={styles.buttonText}>Go Back</ThemedText>
-        </TouchableOpacity>
-      </ThemedView>
-    );
-  }
-  const parsedChat = parsedResult.data;
+  // DEBUG: Log the actual data structure to understand the validation failure
+  if (chat?.json && !parsedResult?.success) {
+    console.log('🔍 DEBUG: Chat data structure:', JSON.stringify(chat.json, null, 2));
+    console.log('🔍 DEBUG: Schema validation errors:', parsedResult?.error?.issues);
 
-  // Remove duplicate messages with improved deduplication
-  const uniqueMessages = parsedChat.messages
+    // Let's also check if chat.json has the expected structure
+    const chatJson = chat.json;
+    console.log('🔍 DEBUG: Has id?', !!chatJson?.id);
+    console.log('🔍 DEBUG: Has userId?', !!chatJson?.userId);
+    console.log('🔍 DEBUG: Has name?', !!chatJson?.name);
+    console.log('🔍 DEBUG: Has messages?', !!chatJson?.messages);
+    console.log('🔍 DEBUG: Messages is array?', Array.isArray(chatJson?.messages));
+    console.log('🔍 DEBUG: Messages length?', chatJson?.messages?.length);
+
+    if (chatJson?.messages?.length > 0) {
+      console.log('🔍 DEBUG: First message:', JSON.stringify(chatJson.messages[0], null, 2));
+    }
+  }
+
+  // Process messages and check for AI trigger - do this before early returns
+  const parsedChat = parsedResult?.success ? parsedResult.data : null;
+  const uniqueMessages = parsedChat?.messages
     ? parsedChat.messages.reduce((acc: typeof parsedChat.messages, message) => {
         // Check if this message already exists in our accumulator
         const isDuplicate = acc.some(
@@ -447,6 +506,139 @@ export default function PracticeSession() {
         return acc;
       }, [])
     : [];
+
+  // AUTO-TRIGGER AI RESPONSE: Move this effect to top level
+  useEffect(() => {
+    const shouldTriggerAI =
+      uniqueMessages.length > 0 &&
+      uniqueMessages[uniqueMessages.length - 1]?.role === 'user' &&
+      !aiTriggered &&
+      uniqueMessages.length === 1; // Only trigger for the initial message
+
+    if (shouldTriggerAI) {
+      console.log('🤖 DETECTED INCOMPLETE CONVERSATION - Auto-triggering AI response');
+      setAiTriggered(true);
+      setWaitingForAI(true); // Add this line
+
+      // Trigger AI response
+      const triggerAI = async () => {
+        try {
+          const cookies = authClient.getCookie();
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+          };
+          if (cookies) {
+            headers.Cookie = cookies;
+          }
+
+          const aiChatData = {
+            messages: uniqueMessages,
+            id: chatId,
+          };
+
+          console.log('🤖 Triggering AI with messages:', aiChatData);
+
+          const aiResponse = await fetch('https://courtly-xi.vercel.app/api/practice-session', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(aiChatData),
+          });
+
+          console.log('🤖 AI Response status:', aiResponse.status);
+
+          if (aiResponse.ok) {
+            console.log('✅ AI response triggered successfully');
+            // The AI response will be saved to the database
+            // Our auto-refresh will pick it up in 3 seconds
+          } else {
+            console.error('❌ AI response failed:', await aiResponse.text());
+            setWaitingForAI(false); // Add this line to hide waiting state on error
+          }
+        } catch (error) {
+          console.error('❌ Error triggering AI:', error);
+          setWaitingForAI(false); // Add this line to hide waiting state on error
+        }
+      };
+
+      triggerAI();
+    }
+  }, [uniqueMessages, chatId, aiTriggered]);
+
+  // Add this new effect to manage waiting state based on messages
+  useEffect(() => {
+    if (uniqueMessages.length > 0) {
+      const lastMessage = uniqueMessages[uniqueMessages.length - 1];
+
+      // Hide waiting state if we get an AI response
+      if (lastMessage.role === 'assistant' && waitingForAI) {
+        setWaitingForAI(false);
+      }
+
+      // Show waiting state if last message is from user and we haven't triggered AI yet
+      if (lastMessage.role === 'user' && uniqueMessages.length > 1 && !waitingForAI) {
+        // Check if there's no assistant response after this user message
+        const hasAssistantResponse = uniqueMessages.some(
+          (msg, index) =>
+            msg.role === 'assistant' &&
+            index > uniqueMessages.findIndex((m) => m.id === lastMessage.id)
+        );
+
+        if (!hasAssistantResponse) {
+          setWaitingForAI(true);
+        }
+      }
+    }
+  }, [uniqueMessages, waitingForAI]);
+
+  // Add this new effect after the existing useEffects
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+
+    if (waitingForAI) {
+      // Start cycling through thinking messages
+      interval = setInterval(() => {
+        setCurrentThinkingIndex((prev) => (prev + 1) % THINKING_MESSAGES.length);
+      }, 2000); // Change message every 2 seconds
+    } else {
+      // Reset to first message when not waiting
+      setCurrentThinkingIndex(0);
+    }
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [waitingForAI]);
+
+  // If parsing failed, let's try to show what we have instead of failing completely
+  if (!parsedResult?.success) {
+    console.log('⚠️ CHAT PARSING FAILED - showing raw data instead');
+
+    // Try to render something useful even if validation fails
+    return (
+      <ThemedView style={styles.errorContainer}>
+        <ThemedText style={styles.errorText}>Chat data validation failed.</ThemedText>
+        <ThemedText style={styles.errorText}>Check console for details.</ThemedText>
+        <TouchableOpacity
+          onPress={() => refetch()}
+          style={[
+            styles.button,
+            { backgroundColor: colorScheme === 'dark' ? '#3b82f6' : '#2563eb', marginBottom: 8 },
+          ]}>
+          <ThemedText style={styles.buttonText}>Refresh</ThemedText>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[
+            styles.button,
+            { backgroundColor: colorScheme === 'dark' ? '#6b7280' : '#4b5563' },
+          ]}>
+          <ThemedText style={styles.buttonText}>Go Back</ThemedText>
+        </TouchableOpacity>
+      </ThemedView>
+    );
+  }
 
   if (authLoading) {
     return (
@@ -505,7 +697,15 @@ export default function PracticeSession() {
           {/* Messages */}
           <ScrollView
             style={styles.messagesContainer}
-            contentContainerStyle={styles.messagesContent}>
+            contentContainerStyle={styles.messagesContent}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[colorScheme === 'dark' ? '#ffffff' : '#000000']}
+                tintColor={colorScheme === 'dark' ? '#ffffff' : '#000000'}
+              />
+            }>
             {uniqueMessages && uniqueMessages.length > 0 ? (
               uniqueMessages.map((message: typeof ChatMessageSchema._type, index: number) => (
                 <ThemedView
@@ -527,6 +727,21 @@ export default function PracticeSession() {
             ) : (
               <ThemedView style={styles.emptyContainer}>
                 <ThemedText style={styles.emptyText}>No messages in this chat yet.</ThemedText>
+              </ThemedView>
+            )}
+            {/* AI Waiting Indicator */}
+            {waitingForAI && (
+              <ThemedView style={styles.waitingIndicator}>
+                <View style={styles.waitingContent}>
+                  <ActivityIndicator
+                    size="small"
+                    color={colorScheme === 'dark' ? '#ffffff' : '#666666'}
+                    style={styles.waitingSpinner}
+                  />
+                  <ThemedText style={styles.waitingText}>
+                    {THINKING_MESSAGES[currentThinkingIndex]}
+                  </ThemedText>
+                </View>
               </ThemedView>
             )}
           </ScrollView>
@@ -696,5 +911,29 @@ const styles = StyleSheet.create({
     fontSize: 14,
     opacity: 0.7,
     textAlign: 'center',
+  },
+  waitingIndicator: {
+    alignSelf: 'flex-start',
+    marginBottom: 16,
+    marginTop: 8,
+  },
+  waitingContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    borderRadius: 16,
+    maxWidth: '100%',
+    minWidth: 200, // Ensure minimum width
+  },
+  waitingSpinner: {
+    marginRight: 8,
+  },
+  waitingText: {
+    fontSize: 14,
+    opacity: 0.75,
+    fontStyle: 'italic',
+    flexWrap: 'wrap',
   },
 });

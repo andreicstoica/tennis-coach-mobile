@@ -26,13 +26,11 @@ export default function NewPracticeSessionModal({
     // Input validation
     if (!focus.trim()) {
       setError('Please enter a focus area (minimum 3 characters)');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
 
     if (focus.trim().length < 3) {
-      setError('Focus area must be at least 3 characters');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setError('Focus area must be at least 3 characters long');
       return;
     }
 
@@ -91,7 +89,7 @@ export default function NewPracticeSessionModal({
       const practiceSessionId = newPracticeSession[0].id;
       console.log('🎯 Practice session created with ID:', practiceSessionId);
 
-      // Step 2: Create chat for the practice session using exact format from [id].tsx
+      // Step 2: Create chat for the practice session (this should auto-create initial message)
       console.log('💬 Creating chat for practice session:', practiceSessionId);
 
       const chatInputData = { json: { practiceSessionId } };
@@ -128,8 +126,9 @@ export default function NewPracticeSessionModal({
       }
 
       console.log('🎉 Chat created with ID:', chatId);
+      console.log('💡 Chat should now have initial message with focus area');
 
-      // Step 3: Navigate to chat and close modal
+      // Step 3: Navigate to chat (no manual AI call - let web app pattern handle it)
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
       // Close modal first
@@ -175,7 +174,7 @@ export default function NewPracticeSessionModal({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={handleClose}>
       <View
         style={{
           flex: 1,

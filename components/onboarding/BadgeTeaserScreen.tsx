@@ -1,6 +1,6 @@
 import { useColorScheme } from '@/hooks/useColorScheme';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { OnboardingScreen } from '../OnboardingScreen';
 import { ThemedText } from '../ThemedText';
 
@@ -75,6 +75,12 @@ const styles = StyleSheet.create({
   },
   badgeIconText: {
     fontSize: 24,
+    lineHeight: 30, // explicit line height
+    textAlign: 'center',
+    ...(Platform.OS === 'android' && {
+      textAlignVertical: 'center',
+      includeFontPadding: false,
+    }),
   },
   badgeName: {
     fontSize: 12,
