@@ -200,16 +200,13 @@ export default function PreviousScreen() {
     if (/backhand/.test(normalizedFocus)) {
       return '#4ECDC4'; // Teal for backhand-related
     }
-    if (/footwork|movement|agility/.test(normalizedFocus)) {
-      return '#45B7D1'; // Blue for footwork/movement
-    }
     if (/volley/.test(normalizedFocus)) {
       return '#96CEB4'; // Green for volley
     }
     if (/forehand/.test(normalizedFocus)) {
       return '#F4D03F'; // Darker yellow for forehand
     }
-    if (/strategy|tactics|game\s*plan|mental|mindset/.test(normalizedFocus)) {
+    if (/strategy|tactics|game\s*plan|mental|mindset|focus/.test(normalizedFocus)) {
       return '#DDA0DD'; // Purple for strategy
     }
     if (/return|returning/.test(normalizedFocus)) {
@@ -221,7 +218,7 @@ export default function PreviousScreen() {
     if (/lob|overhead/.test(normalizedFocus)) {
       return '#98FB98'; // Pale gree@n for lobs/overheads
     }
-    if (/footwork|movement|agility/.test(normalizedFocus)) {
+    if (/footwork|movement|agility|slide|sliding|foot/.test(normalizedFocus)) {
       return '#FF8C42'; // Orange-red for footwork
     }
 

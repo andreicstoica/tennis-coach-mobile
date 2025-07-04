@@ -12,6 +12,11 @@ const courtLocations = [
         longitude: -73.975854
     },
     {
+        name: 'mccarren',
+        latitude: 40.721734,
+        longitude: -73.954570
+    },
+    {
         name: 'central-park',
         latitude: 40.789949,
         longitude: -73.961942
