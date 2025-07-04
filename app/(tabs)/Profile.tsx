@@ -287,7 +287,7 @@ export default function ProfileScreen() {
 }
 
 const { width } = Dimensions.get('window');
-const badgeSize = (width - 48) / 2; // 2 badges per row with padding
+const badgeSize = (width - 60) / 2; // Increased gap between cards (was 48)
 
 const styles = StyleSheet.create({
   container: {
@@ -339,8 +339,8 @@ const styles = StyleSheet.create({
   badgeCard: {
     width: badgeSize,
     alignItems: 'center',
-    marginBottom: 24,
-    padding: 12,
+    marginBottom: 32, // Increased from 24
+    padding: 8, // Reduced from 12
     backgroundColor: '#f8f9fa',
     borderRadius: 16,
     borderWidth: 1,
