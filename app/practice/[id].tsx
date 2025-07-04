@@ -400,9 +400,10 @@ export default function PracticeSession() {
   const { colorScheme } = useColorScheme();
   const [chatIdReady, setChatIdReady] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [aiTriggered, setAiTriggered] = useState(false); // Move to top level
+  const [aiTriggered, setAiTriggered] = useState(false);
   const [waitingForAI, setWaitingForAI] = useState(false);
   const [currentThinkingIndex, setCurrentThinkingIndex] = useState(0);
+  const [aiTimeoutId, setAiTimeoutId] = useState<NodeJS.Timeout | null>(null);
 
   // Get the chatId from the route parameters
   // make sure it's a string that is ready to send to the server
@@ -509,16 +510,39 @@ export default function PracticeSession() {
 
   // AUTO-TRIGGER AI RESPONSE: Move this effect to top level
   useEffect(() => {
+    // Reset aiTriggered when we get a new assistant message
+    if (
+      uniqueMessages.length > 0 &&
+      uniqueMessages[uniqueMessages.length - 1]?.role === 'assistant'
+    ) {
+      setAiTriggered(false);
+    }
+
     const shouldTriggerAI =
       uniqueMessages.length > 0 &&
       uniqueMessages[uniqueMessages.length - 1]?.role === 'user' &&
       !aiTriggered &&
-      uniqueMessages.length === 1; // Only trigger for the initial message
+      // Remove the restrictive length check - trigger for any incomplete conversation
+      !uniqueMessages.some(
+        (msg, index) =>
+          msg.role === 'assistant' &&
+          index >
+            uniqueMessages.findIndex((m) => m.id === uniqueMessages[uniqueMessages.length - 1].id)
+      );
 
     if (shouldTriggerAI) {
       console.log('🤖 DETECTED INCOMPLETE CONVERSATION - Auto-triggering AI response');
       setAiTriggered(true);
-      setWaitingForAI(true); // Add this line
+      setWaitingForAI(true);
+
+      // Set timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        console.log('⏰ AI response timeout - stopping loading state');
+        setWaitingForAI(false);
+        setAiTriggered(false);
+      }, 30000); // 30 second timeout
+
+      setAiTimeoutId(timeoutId);
 
       // Trigger AI response
       const triggerAI = async () => {
@@ -552,11 +576,15 @@ export default function PracticeSession() {
             // Our auto-refresh will pick it up in 3 seconds
           } else {
             console.error('❌ AI response failed:', await aiResponse.text());
-            setWaitingForAI(false); // Add this line to hide waiting state on error
+            setWaitingForAI(false);
+            setAiTriggered(false);
+            if (aiTimeoutId) clearTimeout(aiTimeoutId);
           }
         } catch (error) {
           console.error('❌ Error triggering AI:', error);
-          setWaitingForAI(false); // Add this line to hide waiting state on error
+          setWaitingForAI(false);
+          setAiTriggered(false);
+          if (aiTimeoutId) clearTimeout(aiTimeoutId);
         }
       };
 
@@ -564,7 +592,7 @@ export default function PracticeSession() {
     }
   }, [uniqueMessages, chatId, aiTriggered]);
 
-  // Add this new effect to manage waiting state based on messages
+  // Replace the complex waiting state management effect with this simpler one
   useEffect(() => {
     if (uniqueMessages.length > 0) {
       const lastMessage = uniqueMessages[uniqueMessages.length - 1];
@@ -572,23 +600,13 @@ export default function PracticeSession() {
       // Hide waiting state if we get an AI response
       if (lastMessage.role === 'assistant' && waitingForAI) {
         setWaitingForAI(false);
-      }
-
-      // Show waiting state if last message is from user and we haven't triggered AI yet
-      if (lastMessage.role === 'user' && uniqueMessages.length > 1 && !waitingForAI) {
-        // Check if there's no assistant response after this user message
-        const hasAssistantResponse = uniqueMessages.some(
-          (msg, index) =>
-            msg.role === 'assistant' &&
-            index > uniqueMessages.findIndex((m) => m.id === lastMessage.id)
-        );
-
-        if (!hasAssistantResponse) {
-          setWaitingForAI(true);
+        if (aiTimeoutId) {
+          clearTimeout(aiTimeoutId);
+          setAiTimeoutId(null);
         }
       }
     }
-  }, [uniqueMessages, waitingForAI]);
+  }, [uniqueMessages, waitingForAI, aiTimeoutId]);
 
   // Add this new effect after the existing useEffects
   useEffect(() => {
@@ -610,6 +628,15 @@ export default function PracticeSession() {
       }
     };
   }, [waitingForAI]);
+
+  // Add cleanup effect for timeout
+  useEffect(() => {
+    return () => {
+      if (aiTimeoutId) {
+        clearTimeout(aiTimeoutId);
+      }
+    };
+  }, [aiTimeoutId]);
 
   // If parsing failed, let's try to show what we have instead of failing completely
   if (!parsedResult?.success) {

@@ -97,6 +97,9 @@ export function SignInForm({ onSubmit, onSwitchToSignUp }: SignInFormProps) {
         backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#ffffff',
         borderWidth: 1,
         borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
+        width: '100%',
+        maxWidth: 400,
+        alignSelf: 'center',
       }}>
       <ThemedText
         type="title"
@@ -110,7 +113,7 @@ export function SignInForm({ onSubmit, onSwitchToSignUp }: SignInFormProps) {
       </ThemedText>
 
       {/* Email Input */}
-      <View style={{ marginBottom: 16 }}>
+      <View style={{ marginBottom: 16, width: '100%', alignSelf: 'stretch' }}>
         <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
           Email
         </ThemedText>
@@ -144,7 +147,7 @@ export function SignInForm({ onSubmit, onSwitchToSignUp }: SignInFormProps) {
       </View>
 
       {/* Password Input */}
-      <View style={{ marginBottom: 24 }}>
+      <View style={{ marginBottom: 24, width: '100%', alignSelf: 'stretch' }}>
         <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
           Password
         </ThemedText>

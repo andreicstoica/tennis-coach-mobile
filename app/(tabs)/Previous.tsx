@@ -9,7 +9,14 @@ import { useRouter } from 'expo-router';
 
 import * as Haptics from 'expo-haptics';
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  ActivityIndicator,
+  Animated,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
@@ -38,12 +45,15 @@ export default function PreviousScreen() {
   // Filter state
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const fadeAnim = useState(new Animated.Value(0))[0];
 
   // Only fetch practice sessions if user is authenticated
   const {
     data: rawSessions,
     isLoading,
     error,
+    refetch,
   } = useQuery({
     ...trpc.practiceSession.list.queryOptions(),
     enabled: !!user, // Only run query if user exists
@@ -97,6 +107,30 @@ export default function PreviousScreen() {
       return true;
     });
   }, [sessions, selectedYear, selectedMonth]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+
+    // Fade in the loading indicator
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+
+    try {
+      await refetch();
+    } finally {
+      // Fade out the loading indicator
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        setRefreshing(false);
+      });
+    }
+  };
 
   if (authLoading) {
     return (
@@ -213,164 +247,189 @@ export default function PreviousScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: insets.top, paddingBottom: bottomTabBarHeight + insets.bottom + 16 },
-        ]}>
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="title">Previous Sessions</ThemedText>
-        </ThemedView>
+    <>
+      {/* Top loading indicator */}
+      {refreshing && (
+        <Animated.View style={[styles.topLoader, { opacity: fadeAnim }]}>
+          <ActivityIndicator size="small" color="#007AFF" />
+        </Animated.View>
+      )}
 
-        {/* Year Filter */}
-        {years.length > 0 && (
-          <ThemedView style={styles.filterSection}>
-            <ThemedText style={styles.filterLabel}>Year</ThemedText>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.filterScroll}>
-              <TouchableOpacity
-                style={[styles.filterChip, !selectedYear && styles.filterChipActive]}
-                onPress={clearFilters}>
-                <ThemedText
-                  style={[styles.filterChipText, !selectedYear && styles.filterChipTextActive]}>
-                  All
-                </ThemedText>
-              </TouchableOpacity>
-              {years.map((year) => (
+      <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: insets.top, paddingBottom: bottomTabBarHeight + insets.bottom + 16 },
+          ]}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#007AFF']} // Android
+              tintColor="#007AFF" // iOS
+            />
+          }>
+          <ThemedView style={styles.titleContainer}>
+            <ThemedText type="title">Previous Sessions</ThemedText>
+          </ThemedView>
+
+          {/* Loading indicator */}
+          {refreshing && (
+            <Animated.View style={[styles.loadingContainer, { opacity: fadeAnim }]}>
+              <ActivityIndicator size="small" color="#007AFF" style={styles.loadingSpinner} />
+              <ThemedText style={styles.loadingText}>Refreshing sessions...</ThemedText>
+            </Animated.View>
+          )}
+
+          {/* Year Filter */}
+          {years.length > 0 && (
+            <ThemedView style={styles.filterSection}>
+              <ThemedText style={styles.filterLabel}>Year</ThemedText>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.filterScroll}>
                 <TouchableOpacity
-                  key={year}
-                  style={[styles.filterChip, selectedYear === year && styles.filterChipActive]}
-                  onPress={() => handleYearPress(year)}>
+                  style={[styles.filterChip, !selectedYear && styles.filterChipActive]}
+                  onPress={clearFilters}>
                   <ThemedText
-                    style={[
-                      styles.filterChipText,
-                      selectedYear === year && styles.filterChipTextActive,
-                    ]}>
-                    {year}
+                    style={[styles.filterChipText, !selectedYear && styles.filterChipTextActive]}>
+                    All
                   </ThemedText>
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </ThemedView>
-        )}
+                {years.map((year) => (
+                  <TouchableOpacity
+                    key={year}
+                    style={[styles.filterChip, selectedYear === year && styles.filterChipActive]}
+                    onPress={() => handleYearPress(year)}>
+                    <ThemedText
+                      style={[
+                        styles.filterChipText,
+                        selectedYear === year && styles.filterChipTextActive,
+                      ]}>
+                      {year}
+                    </ThemedText>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </ThemedView>
+          )}
 
-        {/* Month Filter */}
-        {selectedYear && months.length > 0 && (
-          <ThemedView style={styles.filterSection}>
-            <ThemedText style={styles.filterLabel}>Month</ThemedText>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.filterScroll}>
-              <TouchableOpacity
-                style={[styles.filterChip, !selectedMonth && styles.filterChipActive]}
-                onPress={() => setSelectedMonth(null)}>
-                <ThemedText
-                  style={[styles.filterChipText, !selectedMonth && styles.filterChipTextActive]}>
-                  All
-                </ThemedText>
-              </TouchableOpacity>
-              {months.map((month) => (
+          {/* Month Filter */}
+          {selectedYear && months.length > 0 && (
+            <ThemedView style={styles.filterSection}>
+              <ThemedText style={styles.filterLabel}>Month</ThemedText>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.filterScroll}>
                 <TouchableOpacity
-                  key={month}
-                  style={[styles.filterChip, selectedMonth === month && styles.filterChipActive]}
-                  onPress={() => handleMonthPress(month)}>
+                  style={[styles.filterChip, !selectedMonth && styles.filterChipActive]}
+                  onPress={() => setSelectedMonth(null)}>
                   <ThemedText
-                    style={[
-                      styles.filterChipText,
-                      selectedMonth === month && styles.filterChipTextActive,
-                    ]}>
-                    {new Date(2024, month - 1).toLocaleDateString('en-US', { month: 'short' })}
+                    style={[styles.filterChipText, !selectedMonth && styles.filterChipTextActive]}>
+                    All
                   </ThemedText>
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </ThemedView>
-        )}
-
-        {/* Sessions */}
-        {filteredSessions.map((session: PracticeSession, index: number) => {
-          let plan: Plan | null = null;
-          try {
-            plan = session.plan ? JSON.parse(session.plan) : null;
-          } catch {
-            plan = null;
-          }
-
-          // Emoji for focus area
-          const focusEmoji = (() => {
-            const focus = session.focusArea.toLowerCase();
-            if (/serve|serving/.test(focus)) return '🎯';
-            if (/backhand/.test(focus)) return '🤜';
-            if (/footwork|movement|agility/.test(focus)) return '💃';
-            if (/volley/.test(focus)) return '🏐';
-            if (/forehand/.test(focus)) return '🫲';
-            if (/strategy|tactics|game\s*plan|mental|mindset/.test(focus)) return '🧠';
-            if (/return|returning/.test(focus)) return '↩️';
-            if (/approach|approaching/.test(focus)) return '🏃';
-            if (/lob|overhead/.test(focus)) return '🪂';
-            return '🏷️';
-          })();
-
-          // Spine color (use focus badge color)
-          const spineColor = getFocusBadgeColor(session.focusArea);
-
-          return (
-            <TouchableOpacity
-              key={session.id ?? index}
-              style={styles.notebookCardWrapper}
-              onPress={() => handleCardPress(session)}
-              activeOpacity={0.85}>
-              {/* Notebook Spine */}
-              <ThemedView style={[styles.notebookSpine, { backgroundColor: spineColor }]}>
-                <ThemedText style={styles.spineText}>
-                  {session.createdAt ? new Date(session.createdAt).toLocaleDateString() : ''}
-                </ThemedText>
-                <ThemedText style={styles.spineText}>
-                  <ThemedText style={styles.spineEmoji}>{focusEmoji}</ThemedText>{' '}
-                  {session.focusArea}
-                </ThemedText>
-              </ThemedView>
-              {/* Notebook Cover */}
-              <ThemedView style={styles.notebookCover}>
-                {plan ? (
-                  <>
-                    <ThemedText style={styles.coverRow} numberOfLines={1} ellipsizeMode="tail">
-                      <ThemedText style={styles.coverLabel}> Warmup: </ThemedText>
-                      {plan.warmup}
+                {months.map((month) => (
+                  <TouchableOpacity
+                    key={month}
+                    style={[styles.filterChip, selectedMonth === month && styles.filterChipActive]}
+                    onPress={() => handleMonthPress(month)}>
+                    <ThemedText
+                      style={[
+                        styles.filterChipText,
+                        selectedMonth === month && styles.filterChipTextActive,
+                      ]}>
+                      {new Date(2024, month - 1).toLocaleDateString('en-US', { month: 'short' })}
                     </ThemedText>
-                    <ThemedText style={styles.coverRow} numberOfLines={1} ellipsizeMode="tail">
-                      <ThemedText style={styles.coverLabel}> Drill: </ThemedText>
-                      {plan.drill}
-                    </ThemedText>
-                    <ThemedText style={styles.coverRow} numberOfLines={1} ellipsizeMode="tail">
-                      <ThemedText style={styles.coverLabel}> Game: </ThemedText>
-                      {plan.game}
-                    </ThemedText>
-                  </>
-                ) : (
-                  <ThemedText style={styles.coverText} numberOfLines={2} ellipsizeMode="tail">
-                    No plan available.
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </ThemedView>
+          )}
+
+          {/* Sessions */}
+          {filteredSessions.map((session: PracticeSession, index: number) => {
+            let plan: Plan | null = null;
+            try {
+              plan = session.plan ? JSON.parse(session.plan) : null;
+            } catch {
+              plan = null;
+            }
+
+            // Emoji for focus area
+            const focusEmoji = (() => {
+              const focus = session.focusArea.toLowerCase();
+              if (/serve|serving/.test(focus)) return '🎯';
+              if (/backhand/.test(focus)) return '🤜';
+              if (/footwork|movement|agility/.test(focus)) return '💃';
+              if (/volley/.test(focus)) return '🏐';
+              if (/forehand/.test(focus)) return '🫲';
+              if (/strategy|tactics|game\s*plan|mental|mindset/.test(focus)) return '🧠';
+              if (/return|returning/.test(focus)) return '↩️';
+              if (/approach|approaching/.test(focus)) return '🏃';
+              if (/lob|overhead/.test(focus)) return '🪂';
+              return '🏷️';
+            })();
+
+            // Spine color (use focus badge color)
+            const spineColor = getFocusBadgeColor(session.focusArea);
+
+            return (
+              <TouchableOpacity
+                key={session.id ?? index}
+                style={styles.notebookCardWrapper}
+                onPress={() => handleCardPress(session)}
+                activeOpacity={0.85}>
+                {/* Notebook Spine */}
+                <ThemedView style={[styles.notebookSpine, { backgroundColor: spineColor }]}>
+                  <ThemedText style={styles.spineText}>
+                    {session.createdAt ? new Date(session.createdAt).toLocaleDateString() : ''}
                   </ThemedText>
-                )}
-              </ThemedView>
-            </TouchableOpacity>
-          );
-        })}
+                  <ThemedText style={styles.spineText}>
+                    <ThemedText style={styles.spineEmoji}>{focusEmoji}</ThemedText>{' '}
+                    {session.focusArea}
+                  </ThemedText>
+                </ThemedView>
+                {/* Notebook Cover */}
+                <ThemedView style={styles.notebookCover}>
+                  {plan ? (
+                    <>
+                      <ThemedText style={styles.coverRow} numberOfLines={1} ellipsizeMode="tail">
+                        <ThemedText style={styles.coverLabel}> Warmup: </ThemedText>
+                        {plan.warmup}
+                      </ThemedText>
+                      <ThemedText style={styles.coverRow} numberOfLines={1} ellipsizeMode="tail">
+                        <ThemedText style={styles.coverLabel}> Drill: </ThemedText>
+                        {plan.drill}
+                      </ThemedText>
+                      <ThemedText style={styles.coverRow} numberOfLines={1} ellipsizeMode="tail">
+                        <ThemedText style={styles.coverLabel}> Game: </ThemedText>
+                        {plan.game}
+                      </ThemedText>
+                    </>
+                  ) : (
+                    <ThemedText style={styles.coverText} numberOfLines={2} ellipsizeMode="tail">
+                      No plan available.
+                    </ThemedText>
+                  )}
+                </ThemedView>
+              </TouchableOpacity>
+            );
+          })}
 
-        {filteredSessions.length === 0 && sessions.length > 0 && (
-          <ThemedView style={styles.emptyContainer}>
-            <ThemedText style={styles.emptyText}>
-              No sessions found for the selected filters.
-            </ThemedText>
-          </ThemedView>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+          {filteredSessions.length === 0 && sessions.length > 0 && (
+            <ThemedView style={styles.emptyContainer}>
+              <ThemedText style={styles.emptyText}>
+                No sessions found for the selected filters.
+              </ThemedText>
+            </ThemedView>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    </>
   );
 }
 
@@ -559,5 +618,33 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    marginBottom: 16,
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 122, 255, 0.2)',
+  },
+  loadingSpinner: {
+    marginRight: 8,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#007AFF',
+    fontWeight: '500',
+  },
+  topLoader: {
+    position: 'absolute',
+    top: 60, // Adjust based on your needs
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 1000,
+    paddingVertical: 8,
   },
 });
