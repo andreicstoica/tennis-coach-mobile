@@ -108,9 +108,29 @@ export const chatRouter = t.router({
         .mutation(async ({ ctx, input }) => { return { success: true } }),
 });
 
+export const courtBadgesRouter = t.router({
+    // Get the court badges for a user
+    getCourtBadges: t.procedure
+        .input(z.object({ courtName: z.string() }))
+        .output(z.object({ success: z.boolean() }))
+        .query(async ({ ctx, input }) => {
+            console.log('TRPC get court badges with input:', input);
+            return { success: true }
+        }),
+    // Update the court badges for a user
+    updateCourtBadges: t.procedure
+        .input(z.object({ courtName: z.string() }))
+        .output(z.object({ success: z.boolean() }))
+        .mutation(async ({ ctx, input }) => {
+            console.log('TRPC update court badges with input:', input);
+            return { success: true }
+        }),
+});
+
 export const appRouter = t.router({
     practiceSession: practiceSessionRouter,
     chat: chatRouter,
+    courtBadges: courtBadgesRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -1,11 +1,14 @@
 import { authClient } from '@/lib/auth-client';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ActivityIndicator, Modal, View } from 'react-native';
 import { ThemedText } from './ThemedText';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+
+import * as Location from 'expo-location';
+import { checkLocation } from '~/lib/court-helper';
 
 interface NewPracticeSessionModalProps {
   visible: boolean;
@@ -19,8 +22,25 @@ export default function NewPracticeSessionModal({
   const [focus, setFocus] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
+  const [location, setLocation] = React.useState<Location.LocationObject | null>(null);
 
   const router = useRouter();
+
+  useEffect(() => {
+    const getLocation = async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setError('Location permission not granted');
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync();
+      console.log('🌍 Location:', location);
+      setLocation(location);
+    };
+
+    getLocation();
+  }, []);
 
   const handleCreate = async () => {
     // Input validation
@@ -88,6 +108,47 @@ export default function NewPracticeSessionModal({
 
       const practiceSessionId = newPracticeSession[0].id;
       console.log('🎯 Practice session created with ID:', practiceSessionId);
+
+      // Step 1.5: Check if user is near a court and update badge if so
+      if (location) {
+        console.log('🌍 Checking if user is near a court...');
+        const courtName = checkLocation(location.coords.latitude, location.coords.longitude);
+
+        if (courtName) {
+          console.log('🏆 User is near court:', courtName);
+          try {
+            const badgeInputData = { json: { courtName } };
+            const badgeUrl = `https://courtly-xi.vercel.app/api/trpc/courtBadges.updateCourtBadges`;
+
+            console.log('🔗 Badge URL:', badgeUrl);
+            console.log('📦 Badge input:', badgeInputData);
+
+            const badgeResponse = await fetch(badgeUrl, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify(badgeInputData),
+            });
+
+            console.log('📊 Badge response status:', badgeResponse.status);
+            console.log('📊 Badge response ok:', badgeResponse.ok);
+
+            if (badgeResponse.ok) {
+              console.log('✅ Court badge updated successfully!');
+            } else {
+              const errorText = await badgeResponse.text();
+              console.error('⚠️ Badge update failed (non-critical):', errorText);
+              // Don't throw error - badge update failure shouldn't stop practice session creation
+            }
+          } catch (badgeError) {
+            console.error('⚠️ Badge update error (non-critical):', badgeError);
+            // Don't throw error - badge update failure shouldn't stop practice session creation
+          }
+        } else {
+          console.log('📍 User is not near any registered court');
+        }
+      } else {
+        console.log('📍 No location data available for court badge check');
+      }
 
       // Step 2: Create chat for the practice session (this should auto-create initial message)
       console.log('💬 Creating chat for practice session:', practiceSessionId);

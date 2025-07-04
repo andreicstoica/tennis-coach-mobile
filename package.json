@@ -69,7 +69,10 @@
     "superjson": "^2.2.2",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^3.4.17",
-    "zod": "^3.25.71"
+    "zod": "^3.25.71",
+    "expo-av": "~15.1.7",
+    "expo-video": "~2.2.2",
+    "expo-location": "~18.1.6"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
