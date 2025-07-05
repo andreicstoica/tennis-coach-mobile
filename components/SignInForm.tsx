@@ -63,7 +63,7 @@ export function SignInForm({ onSubmit, onSwitchToSignUp }: SignInFormProps) {
 
       await authClient.signIn.social({
         provider: 'google',
-        // No callbackURL - let Better Auth handle the redirect
+        //callbackURL: '/(tabs)',
       });
 
       // Social sign-in handles the redirect automatically

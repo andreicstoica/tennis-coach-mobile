@@ -65,12 +65,8 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
     setIsSigningUp(true);
 
     try {
-      await authClient.signUp.email({
-        email,
-        password,
-        name,
-      });
-      onSubmit(name, email, password);
+      // Let the auth context handle the signup
+      await onSubmit(name, email, password);
     } catch (error) {
       console.error('Sign up error:', error);
       setErrors({
@@ -87,7 +83,7 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
     try {
       await authClient.signIn.social({
         provider: 'google',
-        // No callbackURL - let Better Auth handle the redirect
+        callbackURL: '/(tabs)',
       });
       console.log('Google sign up successful');
     } catch (error) {
@@ -138,7 +134,7 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
       {/* Name Input */}
       <View style={{ marginBottom: 16, width: '100%', alignSelf: 'stretch' }}>
         <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
-          Full Name
+          Username
         </ThemedText>
         <TextInput
           value={name}

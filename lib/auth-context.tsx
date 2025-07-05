@@ -9,6 +9,7 @@ interface AuthContextType {
   isLoading: boolean;
   signOut: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  signUp: (name: string, email: string, password: string) => Promise<void>;
   completeOnboarding: () => void;
   clearStorage: () => Promise<void>;
 }
@@ -92,6 +93,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signUp = async (name: string, email: string, password: string) => {
+    try {
+      console.log('Auth context: Attempting to sign up with email:', email);
+
+      const result = await authClient.signUp.email({
+        email,
+        password,
+        name,
+      });
+
+      console.log('Auth context: Sign up result:', result);
+
+      // Check for both success and error cases
+      if (result.error) {
+        console.error('Auth context: Sign up error from server:', result.error);
+        throw new Error(result.error.message || 'Sign up failed');
+      }
+
+      if (result.data?.user) {
+        console.log('Auth context: Setting user state after sign up:', result.data.user.email);
+        setUser(result.data.user);
+        // Don't navigate here - let the onboarding flow handle it
+      } else {
+        console.error('Auth context: No user data in sign up result:', result);
+        throw new Error('No user data received from authentication server');
+      }
+    } catch (error) {
+      console.error('Auth context: Sign up error:', error);
+      throw error;
+    }
+  };
+
   const completeOnboarding = () => {
     console.log('Auth context: Completing onboarding, navigating to tabs');
     // Navigate to home after successful onboarding completion
@@ -134,7 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, signOut, signIn, completeOnboarding, clearStorage }}>
+      value={{ user, isLoading, signOut, signIn, signUp, completeOnboarding, clearStorage }}>
       {children}
     </AuthContext.Provider>
   );

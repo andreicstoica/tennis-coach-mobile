@@ -2,16 +2,14 @@ import { OnboardingFlow } from '@/components/OnboardingFlow';
 import { useAuth } from '@/lib/auth-context';
 
 export default function AuthScreen() {
-  const { signIn, completeOnboarding } = useAuth();
+  const { signIn, signUp, completeOnboarding } = useAuth();
 
   const handleSignIn = async (email: string, password: string) => {
     await signIn(email, password);
   };
 
   const handleSignUp = async (name: string, email: string, password: string) => {
-    // The actual sign up is handled in SignUpForm component
-    // This is just a placeholder for the flow
-    console.log('Sign up completed:', { name, email });
+    await signUp(name, email, password);
   };
 
   const handleOnboardingComplete = () => {
