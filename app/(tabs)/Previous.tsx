@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -46,6 +47,7 @@ export default function PreviousScreen() {
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [showBlur, setShowBlur] = useState(false);
   const fadeAnim = useState(new Animated.Value(0))[0];
 
   // Only fetch practice sessions if user is authenticated
@@ -130,6 +132,12 @@ export default function PreviousScreen() {
         setRefreshing(false);
       });
     }
+  };
+
+  const handleScroll = (event: any) => {
+    const scrollY = event.nativeEvent.contentOffset.y;
+    const threshold = 50; // Show blur when scrolled more than 50px
+    setShowBlur(scrollY > threshold);
   };
 
   if (authLoading) {
@@ -252,6 +260,18 @@ export default function PreviousScreen() {
         </Animated.View>
       )}
 
+      {/* Progressive gradient overlay at top - only when scrolling */}
+      {showBlur && (
+        <LinearGradient
+          colors={[
+            'rgba(255, 255, 255, 0.95)',
+            'rgba(255, 255, 255, 0.7)',
+            'rgba(255, 255, 255, 0)',
+          ]}
+          style={[styles.topBlurOverlay, { height: insets.top + 30 }]}
+        />
+      )}
+
       <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
         <ScrollView
           style={styles.scrollView}
@@ -259,6 +279,8 @@ export default function PreviousScreen() {
             styles.scrollContent,
             { paddingTop: insets.top, paddingBottom: bottomTabBarHeight + insets.bottom + 16 },
           ]}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -360,7 +382,7 @@ export default function PreviousScreen() {
             const focusEmoji = (() => {
               const focus = session.focusArea.toLowerCase();
               if (/serve|serving/.test(focus)) return '🎯';
-              if (/backhand/.test(focus)) return '🤜';
+              if (/backhand/.test(focus)) return '��';
               if (/footwork|movement|agility/.test(focus)) return '💃';
               if (/volley/.test(focus)) return '🏐';
               if (/forehand/.test(focus)) return '🫲';
@@ -648,5 +670,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 1000,
     paddingVertical: 8,
+  },
+  topBlurOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
   },
 });

@@ -4,6 +4,7 @@ import { useColorScheme } from '~/hooks/useColorScheme';
 
 import {
   ActivityIndicator,
+  Animated, // Add this import
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -16,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import z from 'zod';
 
 import { authClient } from '~/lib/auth-client';
@@ -84,10 +85,10 @@ const MarkdownText = ({ content, style }: { content: string; style?: any }) => {
           const level = headerMatch[1].length;
           const headerStyle =
             level === 1
-              ? { fontSize: 20, fontWeight: 'bold', marginVertical: 8 }
+              ? { fontSize: 20, fontWeight: 'bold', marginVertical: 4 } // Reduced from 8
               : level === 2
-                ? { fontSize: 18, fontWeight: 'bold', marginVertical: 6 }
-                : { fontSize: 16, fontWeight: 'bold', marginVertical: 4 };
+                ? { fontSize: 18, fontWeight: 'bold', marginVertical: 3 } // Reduced from 6
+                : { fontSize: 16, fontWeight: 'bold', marginVertical: 2 }; // Reduced from 4
 
           return (
             <Text key={lineIndex} style={[style, headerStyle]}>
@@ -103,14 +104,16 @@ const MarkdownText = ({ content, style }: { content: string; style?: any }) => {
       // Only render if line has content
       if (line.trim() === '') {
         return (
-          <Text key={lineIndex} style={style}>
+          <Text key={lineIndex} style={[style, { lineHeight: 18 }]}>
             {'\n'}
           </Text>
         );
       }
 
       return (
-        <Text key={lineIndex} style={style}>
+        <Text key={lineIndex} style={[style, { lineHeight: 20 }]}>
+          {' '}
+          {/* Reduced line height */}
           {lineSegments.map((segment, segmentIndex) => {
             if (segment.startsWith('<BOLD>')) {
               return (
@@ -145,8 +148,26 @@ const PracticePlanAccordion = ({ content, textStyle }: { content: string; textSt
     game: false,
   });
 
+  // Create animated values for each section
+  const animatedValues = useRef({
+    warmup: new Animated.Value(1), // Start expanded
+    drill: new Animated.Value(0),
+    game: new Animated.Value(0),
+  }).current;
+
   const toggleSection = (section: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    const isExpanded = expandedSections[section];
+    const toValue = isExpanded ? 0 : 1;
+
+    // Start animation
+    Animated.timing(animatedValues[section as keyof typeof animatedValues], {
+      toValue,
+      duration: 200,
+      useNativeDriver: false, // We're animating height, so we can't use native driver
+    }).start();
+
     setExpandedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
@@ -325,6 +346,7 @@ const PracticePlanAccordion = ({ content, textStyle }: { content: string; textSt
         const isExpanded = expandedSections[sectionKey];
         const icon = sectionIcons[sectionKey as keyof typeof sectionIcons];
         const color = sectionColors[sectionKey as keyof typeof sectionColors];
+        const animatedValue = animatedValues[sectionKey as keyof typeof animatedValues];
 
         return (
           <View key={sectionKey} style={styles.accordionSection}>
@@ -335,14 +357,40 @@ const PracticePlanAccordion = ({ content, textStyle }: { content: string; textSt
               <Text style={styles.accordionHeaderText}>
                 {icon} {sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1)}
               </Text>
-              <Text style={styles.accordionChevron}>{isExpanded ? '▼' : '▶'}</Text>
+              <Animated.Text
+                style={[
+                  styles.accordionChevron,
+                  {
+                    transform: [
+                      {
+                        rotate: animatedValue.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: ['0deg', '90deg'],
+                        }),
+                      },
+                    ],
+                  },
+                ]}>
+                ▶
+              </Animated.Text>
             </TouchableOpacity>
 
-            {isExpanded && (
-              <View style={styles.accordionContent}>
-                <MarkdownText content={sectionContent} style={textStyle} />
-              </View>
-            )}
+            <Animated.View
+              style={[
+                styles.accordionContent,
+                {
+                  maxHeight: animatedValue.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 1000], // Adjust max height as needed
+                  }),
+                  opacity: animatedValue.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 0.5, 1],
+                  }),
+                },
+              ]}>
+              <MarkdownText content={sectionContent} style={textStyle} />
+            </Animated.View>
           </View>
         );
       })}
@@ -868,7 +916,7 @@ const styles = StyleSheet.create({
   },
   messageContent: {
     fontSize: 16,
-    lineHeight: 22,
+    lineHeight: 20, // Reduced from 22
   },
   messageTime: {
     fontSize: 11,
@@ -892,10 +940,10 @@ const styles = StyleSheet.create({
   },
   // Accordion styles
   accordionContainer: {
-    marginVertical: 4,
+    marginVertical: 2,
   },
   accordionSection: {
-    marginBottom: 8,
+    marginBottom: 4,
     borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -908,7 +956,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: 12,
     borderRadius: 12,
   },
   accordionHeaderText: {
@@ -924,15 +972,14 @@ const styles = StyleSheet.create({
   },
   accordionContent: {
     backgroundColor: '#f8f9fa',
-    padding: 16,
+    padding: 16, // Increased back to 16 for more text padding
     borderBottomLeftRadius: 12,
     borderBottomRightRadius: 12,
   },
   collapsedPreview: {
-    padding: 16,
+    padding: 12, // Reduced from 16
     backgroundColor: '#f0f0f0',
     borderRadius: 12,
-    marginBottom: 8,
   },
   previewText: {
     fontSize: 14,
