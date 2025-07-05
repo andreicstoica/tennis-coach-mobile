@@ -385,7 +385,10 @@ export default function PreviousScreen() {
                   <ThemedText style={styles.spineText}>
                     {session.createdAt ? new Date(session.createdAt).toLocaleDateString() : ''}
                   </ThemedText>
-                  <ThemedText style={styles.spineText}>
+                  <ThemedText
+                    style={[styles.spineText, styles.spineRightText]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail">
                     <ThemedText style={styles.spineEmoji}>{focusEmoji}</ThemedText>{' '}
                     {session.focusArea}
                   </ThemedText>
@@ -577,11 +580,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 14,
     letterSpacing: 0.5,
-    flexDirection: 'row',
-    alignItems: 'center',
+  },
+  spineRightText: {
+    flex: 1,
+    textAlign: 'right',
+    marginLeft: 6,
+    marginRight: 6,
   },
   spineEmoji: {
-    fontSize: 16,
+    fontSize: 14,
     marginRight: 4,
   },
   notebookCover: {
@@ -590,7 +597,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 20,
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
-    padding: 18,
+    padding: 14,
     borderWidth: 1.5,
     borderColor: '#E5E5E5',
     borderStyle: 'dotted',
@@ -613,8 +620,6 @@ const styles = StyleSheet.create({
     color: '#333',
     opacity: 0.95,
     marginBottom: 4,
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   loadingContainer: {
     flexDirection: 'row',
