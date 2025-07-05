@@ -1,6 +1,7 @@
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { Image } from 'expo-image';
 import React from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { OnboardingScreen } from '../OnboardingScreen';
 import { ThemedText } from '../ThemedText';
 
@@ -19,16 +20,10 @@ export function BadgeTeaserScreen({
 }: BadgeTeaserScreenProps) {
   const { colorScheme } = useColorScheme();
 
-  const badges = [
-    { icon: '🏆', name: 'Central Park', color: '#10b981' },
-    { icon: '🏅', name: 'Prospect Park', color: '#3b82f6' },
-    { icon: '🥇', name: 'Riverside Park', color: '#f59e0b' },
-  ];
-
   return (
     <OnboardingScreen
-      title="Collect Badges for NYC's Top Tennis Courts!"
-      description="Play, practice, and unlock badges for iconic courts like Central Park and Prospect Park."
+      title="Collect Badges for NYC's Top Courts!"
+      description="Practice and unlock badges for iconic courts like Central Park."
       buttonText="Show Me How"
       onButtonPress={onNext}
       showBack={true}
@@ -36,55 +31,57 @@ export function BadgeTeaserScreen({
       showSkip={false}
       currentStep={currentStep}
       totalSteps={totalSteps}>
-      <View style={styles.badgesContainer}>
-        {badges.map((badge, index) => (
-          <View key={index} style={styles.badgeItem}>
-            <View style={[styles.badgeIcon, { backgroundColor: badge.color }]}>
-              <ThemedText style={styles.badgeIconText}>{badge.icon}</ThemedText>
-            </View>
-            <ThemedText style={styles.badgeName}>{badge.name}</ThemedText>
-          </View>
-        ))}
+      <View style={styles.badgeContainer}>
+        <View style={styles.badgeCard}>
+          <Image
+            source={require('../../assets/images/badges/central-park.png')}
+            style={styles.badgeImage}
+            contentFit="contain"
+          />
+          <ThemedText style={styles.badgeName}>Central Park</ThemedText>
+          <ThemedText style={styles.badgeDescription}>Your first badge awaits!</ThemedText>
+        </View>
       </View>
     </OnboardingScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  badgesContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginTop: 20,
-  },
-  badgeItem: {
+  badgeContainer: {
     alignItems: 'center',
-    gap: 8,
-  },
-  badgeIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
     justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    width: '100%',
+    marginTop: 40,
   },
-  badgeIconText: {
-    fontSize: 24,
-    lineHeight: 30, // explicit line height
-    textAlign: 'center',
-    ...(Platform.OS === 'android' && {
-      textAlignVertical: 'center',
-      includeFontPadding: false,
-    }),
+  badgeCard: {
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    minWidth: 200,
+  },
+  badgeImage: {
+    width: 120,
+    height: 120,
+    marginBottom: 16,
   },
   badgeName: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 18,
+    fontWeight: '600',
     textAlign: 'center',
+    marginBottom: 8,
+  },
+  badgeDescription: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
 });

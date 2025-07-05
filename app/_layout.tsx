@@ -1,12 +1,12 @@
 import '~/global.css';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { AuthProvider } from '@/lib/auth-context';
+import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { TRPCClientProvider } from '@/lib/trpc/trpc';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import * as Linking from 'expo-linking';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 
@@ -17,6 +17,33 @@ export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
 } from 'expo-router';
+
+function NavigationWrapper() {
+  const { user, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (user) {
+        router.replace('/(tabs)');
+      } else {
+        router.replace('/auth');
+      }
+    }
+  }, [isLoading, user]);
+
+  if (isLoading) {
+    return null; // or a loading screen
+  }
+
+  return (
+    <Stack>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="auth" options={{ headerShown: false }} />
+      <Stack.Screen name="practice/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="+not-found" />
+    </Stack>
+  );
+}
 
 export default function RootLayout() {
   const { isDarkColorScheme } = useColorScheme();
@@ -67,12 +94,7 @@ export default function RootLayout() {
     <AuthProvider>
       <TRPCClientProvider>
         <ThemeProvider value={isDarkColorScheme ? DarkTheme : DefaultTheme}>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="auth" options={{ headerShown: false }} />
-            <Stack.Screen name="practice/[id]" options={{ headerShown: false }} />
-            <Stack.Screen name="+not-found" />
-          </Stack>
+          <NavigationWrapper />
         </ThemeProvider>
       </TRPCClientProvider>
     </AuthProvider>

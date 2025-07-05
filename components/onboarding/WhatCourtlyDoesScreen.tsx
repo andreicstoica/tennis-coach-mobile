@@ -124,8 +124,8 @@ export function WhatCourtlyDoesScreen({
 
   return (
     <OnboardingScreen
-      title="Your AI Coach Creates Your Perfect Practice Plan"
-      description="Whether you want to sharpen your backhand, boost serve accuracy, or build mental toughness, Courtly designs sessions tailored to your goals."
+      title="Courtly Creates Your Perfect Practice Plan"
+      description="Whether you want to boost your serve, build mental toughness, or fix your backhand, we've got you covered."
       buttonText="Next"
       onButtonPress={onNext}
       showBack={true}

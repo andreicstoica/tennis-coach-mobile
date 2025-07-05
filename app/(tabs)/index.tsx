@@ -114,7 +114,9 @@ export default function HomeScreen() {
             className="max-w-lg"
             onPress={() => setShowModal(true)}
             style={{ marginBottom: 16, marginTop: 0 }}>
-            <ThemedText style={{ color: 'white' }}>New Practice Session</ThemedText>
+            <ThemedText style={{ color: 'white', fontFamily: 'LumberSans' }}>
+              New Practice Session
+            </ThemedText>
           </Button>
         </ThemedView>
         <NewPracticeSessionModal visible={showModal} onClose={() => setShowModal(false)} />

@@ -1,5 +1,12 @@
-import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Dimensions, StyleSheet, View } from 'react-native';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import {
   AccountSetupScreen,
   BadgeTeaserScreen,
@@ -26,8 +33,20 @@ interface OnboardingFlowProps {
   onSignUp: (name: string, email: string, password: string) => Promise<void>;
 }
 
+const { width: screenWidth } = Dimensions.get('window');
+
 export function OnboardingFlow({ onComplete, onSignIn, onSignUp }: OnboardingFlowProps) {
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome');
+  const translateX = useSharedValue(0);
+
+  const swipeableSteps: OnboardingStep[] = [
+    'welcome',
+    'what-courtly-does',
+    'badge-teaser',
+    'account-setup',
+  ];
+  const currentStepIndex = swipeableSteps.indexOf(currentStep);
+  const isSwipeableStep = currentStepIndex !== -1;
 
   const goToNext = () => {
     switch (currentStep) {
@@ -97,13 +116,66 @@ export function OnboardingFlow({ onComplete, onSignIn, onSignUp }: OnboardingFlo
     setCurrentStep('account-setup');
   };
 
-  const getStepNumber = (step: OnboardingStep): number => {
-    const stepOrder = ['welcome', 'what-courtly-does', 'badge-teaser', 'account-setup'];
-    return stepOrder.indexOf(step) + 1;
-  };
+  const panGesture = Gesture.Pan()
+    .onUpdate((event) => {
+      if (!isSwipeableStep) return;
 
-  const renderCurrentStep = () => {
-    switch (currentStep) {
+      // Calculate the base position for current step
+      const basePosition = -currentStepIndex * screenWidth;
+
+      // Add the gesture translation
+      translateX.value = basePosition + event.translationX;
+    })
+    .onEnd((event) => {
+      if (!isSwipeableStep) return;
+
+      const threshold = screenWidth * 0.2; // 20% of screen width
+      const velocity = event.velocityX;
+
+      // Determine if we should change steps
+      let targetStep = currentStepIndex;
+
+      if (event.translationX > threshold || velocity > 500) {
+        // Swipe right - go to previous step
+        if (currentStepIndex > 0) {
+          targetStep = currentStepIndex - 1;
+          runOnJS(goToPrevious)();
+        }
+      } else if (event.translationX < -threshold || velocity < -500) {
+        // Swipe left - go to next step
+        if (currentStepIndex < swipeableSteps.length - 1) {
+          targetStep = currentStepIndex + 1;
+          runOnJS(goToNext)();
+        }
+      }
+
+      // Animate to target position
+      const targetPosition = -targetStep * screenWidth;
+      translateX.value = withSpring(targetPosition, {
+        damping: 20,
+        stiffness: 200,
+      });
+    });
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateX: translateX.value }],
+    };
+  });
+
+  // Reset position when step changes programmatically (via buttons)
+  useEffect(() => {
+    if (isSwipeableStep) {
+      const targetPosition = -currentStepIndex * screenWidth;
+      translateX.value = withSpring(targetPosition, {
+        damping: 20,
+        stiffness: 200,
+      });
+    }
+  }, [currentStep, isSwipeableStep]);
+
+  const renderStepContent = (step: OnboardingStep) => {
+    switch (step) {
       case 'welcome':
         return (
           <WelcomeScreen
@@ -113,7 +185,6 @@ export function OnboardingFlow({ onComplete, onSignIn, onSignUp }: OnboardingFlo
             onSkip={handleSkipToAccountSetup}
           />
         );
-
       case 'what-courtly-does':
         return (
           <WhatCourtlyDoesScreen
@@ -123,7 +194,6 @@ export function OnboardingFlow({ onComplete, onSignIn, onSignUp }: OnboardingFlo
             totalSteps={4}
           />
         );
-
       case 'badge-teaser':
         return (
           <BadgeTeaserScreen
@@ -133,7 +203,6 @@ export function OnboardingFlow({ onComplete, onSignIn, onSignUp }: OnboardingFlo
             totalSteps={4}
           />
         );
-
       case 'account-setup':
         return (
           <AccountSetupScreen
@@ -144,7 +213,6 @@ export function OnboardingFlow({ onComplete, onSignIn, onSignUp }: OnboardingFlo
             totalSteps={4}
           />
         );
-
       case 'sign-up':
         return (
           <ThemedView style={styles.formContainer}>
@@ -154,7 +222,6 @@ export function OnboardingFlow({ onComplete, onSignIn, onSignUp }: OnboardingFlo
             />
           </ThemedView>
         );
-
       case 'sign-in':
         return (
           <ThemedView style={styles.formContainer}>
@@ -164,20 +231,43 @@ export function OnboardingFlow({ onComplete, onSignIn, onSignUp }: OnboardingFlo
             />
           </ThemedView>
         );
-
       case 'final-welcome':
         return <FinalWelcomeScreen onStart={onComplete} />;
-
       default:
-        return <WelcomeScreen onNext={goToNext} onSkip={handleSkipToAccountSetup} />;
+        return null;
     }
   };
 
-  return <View style={styles.container}>{renderCurrentStep()}</View>;
+  if (!isSwipeableStep) {
+    return <View style={styles.container}>{renderStepContent(currentStep)}</View>;
+  }
+
+  return (
+    <GestureHandlerRootView style={styles.container}>
+      <GestureDetector gesture={panGesture}>
+        <Animated.View style={[styles.carouselContainer, animatedStyle]}>
+          {swipeableSteps.map((step, index) => (
+            <View key={step} style={styles.stepContainer}>
+              {renderStepContent(step)}
+            </View>
+          ))}
+        </Animated.View>
+      </GestureDetector>
+    </GestureHandlerRootView>
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  carouselContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    width: screenWidth * 4, // 4 swipeable steps
+  },
+  stepContainer: {
+    width: screenWidth,
     flex: 1,
   },
   formContainer: {

@@ -42,17 +42,9 @@ export function OnboardingScreen({
 
   return (
     <ThemedView style={styles.container}>
-      {/* Header */}
+      {/* Header with Progress Indicators */}
       <View style={styles.header}>
-        {showBack && onBack && (
-          <Button variant="ghost" onPress={onBack} style={styles.backButton}>
-            <ThemedText>← Back</ThemedText>
-          </Button>
-        )}
-      </View>
-
-      {/* Content */}
-      <View style={styles.content}>
+        {/* Progress indicators at the top */}
         {currentStep && totalSteps && (
           <View style={styles.progressContainer}>
             <View style={styles.progressBar}>
@@ -77,6 +69,17 @@ export function OnboardingScreen({
             </View>
           </View>
         )}
+
+        {/* Back button below progress indicators */}
+        {showBack && onBack && (
+          <Button variant="ghost" onPress={onBack} style={styles.backButton}>
+            <ThemedText>← Back</ThemedText>
+          </Button>
+        )}
+      </View>
+
+      {/* Content */}
+      <View style={styles.content}>
         <View style={styles.textContainer}>
           <ThemedText type="title" style={styles.title}>
             {title}
@@ -121,27 +124,12 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
     alignItems: 'center',
     marginBottom: 40,
   },
-  backButton: {
-    paddingHorizontal: 0,
-  },
-  skipButton: {
-    paddingHorizontal: 0,
-    opacity: 0.5,
-  },
-  skipButtonText: {
-    color: '#9ca3af',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-  },
   progressContainer: {
     alignItems: 'center',
+    marginTop: 20,
     marginBottom: 20,
   },
   progressBar: {
@@ -154,6 +142,21 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
+  },
+  backButton: {
+    paddingHorizontal: 0,
+    alignSelf: 'flex-start',
+  },
+  skipButton: {
+    paddingHorizontal: 0,
+    opacity: 0.5,
+  },
+  skipButtonText: {
+    color: '#9ca3af',
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
   },
   textContainer: {
     alignItems: 'center',
@@ -174,6 +177,7 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   description: {
+    marginTop: 16,
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,
