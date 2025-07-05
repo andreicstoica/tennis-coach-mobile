@@ -95,7 +95,7 @@ export default function Badge3D({ badgeImage, courtName, onPress, isModal = fals
       ]);
 
       // Rotate medal to show front face
-      medalMesh.rotation.x = Math.PI / 2;
+      medalMesh.rotation.x = -(Math.PI / 2);
       medalGroup.add(medalMesh);
 
       // Add rim
@@ -137,6 +137,7 @@ export default function Badge3D({ badgeImage, courtName, onPress, isModal = fals
     try {
       console.log('🔄 Starting expo-three texture load...');
       console.log('Badge image asset ID:', badgeImage);
+
       // Use expo-three TextureLoader which handles Expo assets better
       const [{ localUri }] = await Asset.loadAsync(badgeImage);
       const texture = new TextureLoader().load(localUri!);
@@ -154,9 +155,19 @@ export default function Badge3D({ badgeImage, courtName, onPress, isModal = fals
       texture.minFilter = THREE.LinearFilter;
       texture.magFilter = THREE.LinearFilter;
 
+      // Rotate texture 90 degrees to the right (clockwise)
+      texture.rotation = Math.PI / 2;
+
+      // Center the texture rotation
+      texture.center.set(0.5, 0.5);
+
+      // Adjust texture offset and repeat for better alignment
+      texture.offset.set(0, 0);
+      texture.repeat.set(1, 1);
+
       // Update material
       material.map = texture;
-      material.color.setHex(0xffffff); // Remove green tint
+      material.color.setHex(0xffffff);
       material.needsUpdate = true;
 
       console.log('✅ Material updated with expo-three texture');
