@@ -1,6 +1,6 @@
 import { Asset } from 'expo-asset';
 import { ExpoWebGLRenderingContext, GLView } from 'expo-gl';
-import { Renderer, TextureLoader } from 'expo-three'; // Use expo-three TextureLoader
+import { Renderer, TextureLoader } from 'expo-three';
 import React, { useEffect, useRef, useState } from 'react';
 import { PanResponder, View } from 'react-native';
 import * as THREE from 'three';
@@ -13,6 +13,9 @@ interface Badge3DProps {
 }
 
 export default function Badge3D({ badgeImage, courtName, onPress, isModal = false }: Badge3DProps) {
+  /* ------------------------------------------------------------------ */
+  /*  State / refs                                                      */
+  /* ------------------------------------------------------------------ */
   const [gl, setGL] = useState<ExpoWebGLRenderingContext | null>(null);
   const [scene, setScene] = useState<THREE.Scene | null>(null);
   const [camera, setCamera] = useState<THREE.PerspectiveCamera | null>(null);
@@ -24,11 +27,14 @@ export default function Badge3D({ badgeImage, courtName, onPress, isModal = fals
   const autoRotation = useRef(0);
   const isInteracting = useRef(false);
 
+  /* ------------------------------------------------------------------ */
+  /*  Touch / mouse handler                                             */
+  /* ------------------------------------------------------------------ */
   const panResponder = PanResponder.create({
     onMoveShouldSetPanResponder: () => true,
-    onPanResponderGrant: (evt) => {
+    onPanResponderGrant: () => {
       isInteracting.current = true;
-      if (onPress) onPress();
+      onPress?.();
     },
     onPanResponderMove: (evt) => {
       const { locationX, locationY } = evt.nativeEvent;
@@ -42,148 +48,94 @@ export default function Badge3D({ badgeImage, courtName, onPress, isModal = fals
     },
   });
 
-  const onContextCreate = async (gl: ExpoWebGLRenderingContext) => {
-    try {
-      setGL(gl);
+  /* ------------------------------------------------------------------ */
+  /*  GL context setup                                                  */
+  /* ------------------------------------------------------------------ */
+  const onContextCreate = async (glCtx: ExpoWebGLRenderingContext) => {
+    /* renderer */
+    const renderer = new Renderer({ gl: glCtx });
+    renderer.setSize(glCtx.drawingBufferWidth, glCtx.drawingBufferHeight);
+    renderer.setClearColor(0x000000, 0);
 
-      // Setup renderer
-      const renderer = new Renderer({ gl });
-      renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
-      renderer.setClearColor(0x000000, 0);
-      setRenderer(renderer);
+    /* scene & camera */
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(
+      50,
+      glCtx.drawingBufferWidth / glCtx.drawingBufferHeight,
+      0.1,
+      1000
+    );
+    camera.position.z = 4;
 
-      // Setup scene
-      const scene = new THREE.Scene();
-      setScene(scene);
+    /* medal geometry -------------------------------------------------- */
+    const medalGeo = new THREE.CylinderGeometry(1.3, 1.3, 0.15, 32);
 
-      // Setup camera
-      const camera = new THREE.PerspectiveCamera(
-        50,
-        gl.drawingBufferWidth / gl.drawingBufferHeight,
-        0.1,
-        1000
-      );
-      camera.position.z = 4;
-      setCamera(camera);
+    const edgeMat = new THREE.MeshBasicMaterial({ color: 0xb8860b });
+    const backMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+    const frontMat = new THREE.MeshBasicMaterial({ color: 0xffffff }); // texture later
 
-      // Create medal group
-      const medalGroup = new THREE.Group();
+    /* IMPORTANT: index 2 = “bottom” cap = faces the camera after X-rotation */
+    const medalMesh = new THREE.Mesh(medalGeo, [edgeMat, backMat, frontMat]);
+    medalMesh.rotation.x = -Math.PI / 2; // lay the coin flat
 
-      // Create medal geometry
-      const medalGeometry = new THREE.CylinderGeometry(1.3, 1.3, 0.15, 32);
+    const medalGroup = new THREE.Group();
+    medalGroup.add(medalMesh);
 
-      // Create materials (start with placeholder)
-      const frontMaterial = new THREE.MeshBasicMaterial({
-        color: 0x00ff00, // Green placeholder
-        transparent: true,
-        side: THREE.DoubleSide,
-      });
+    /* rim */
+    const rimGeo = new THREE.TorusGeometry(1.3, 0.04, 8, 24);
+    const rimMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+    const rim = new THREE.Mesh(rimGeo, rimMat);
+    rim.position.y = 0.08;
+    medalGroup.add(rim);
 
-      const backMaterial = new THREE.MeshBasicMaterial({
-        color: 0xffd700,
-      });
+    scene.add(medalGroup);
 
-      const edgeMaterial = new THREE.MeshBasicMaterial({
-        color: 0xb8860b,
-      });
+    /* lighting */
+    scene.add(new THREE.AmbientLight(0x404040, 0.8));
+    const dir = new THREE.DirectionalLight(0xffffff, 0.6);
+    dir.position.set(2, 2, 2);
+    scene.add(dir);
 
-      // Create medal with materials
-      const medalMesh = new THREE.Mesh(medalGeometry, [
-        edgeMaterial, // Side (0)
-        frontMaterial, // Top (1)
-        backMaterial, // Bottom (2)
-      ]);
+    /* save objects in state */
+    setGL(glCtx);
+    setScene(scene);
+    setCamera(camera);
+    setRenderer(renderer);
+    setMedal(medalGroup);
 
-      // Rotate medal to show front face
-      medalMesh.rotation.x = -(Math.PI / 2);
-      medalGroup.add(medalMesh);
-
-      // Add rim
-      const rimGeometry = new THREE.TorusGeometry(1.3, 0.04, 8, 24);
-      const rimMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700 });
-      const rimMesh = new THREE.Mesh(rimGeometry, rimMaterial);
-      rimMesh.position.y = 0.08;
-      medalGroup.add(rimMesh);
-
-      // Add chain
-      const chainGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 8);
-      const chainMaterial = new THREE.MeshBasicMaterial({ color: 0x888888 });
-      const chainMesh = new THREE.Mesh(chainGeometry, chainMaterial);
-      chainMesh.position.y = 1.6;
-      chainMesh.rotation.x = Math.PI / 2;
-      medalGroup.add(chainMesh);
-
-      setMedal(medalGroup);
-      scene.add(medalGroup);
-
-      // Simple lighting
-      const ambientLight = new THREE.AmbientLight(0x404040, 0.8);
-      scene.add(ambientLight);
-
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
-      directionalLight.position.set(2, 2, 2);
-      scene.add(directionalLight);
-
-      console.log('✅ Medal setup complete with placeholder');
-
-      // Now load texture using expo-three TextureLoader
-      loadTextureExpo(badgeImage, frontMaterial);
-    } catch (error) {
-      console.error('❌ 3D setup failed:', error);
-    }
+    /* load badge texture onto the frontMat */
+    await loadTexture(badgeImage, frontMat);
   };
 
-  const loadTextureExpo = async (badgeImage: any, material: THREE.MeshBasicMaterial) => {
-    try {
-      console.log('🔄 Starting expo-three texture load...');
-      console.log('Badge image asset ID:', badgeImage);
+  /* ------------------------------------------------------------------ */
+  /*  Texture loader                                                    */
+  /* ------------------------------------------------------------------ */
+  const loadTexture = async (badgeImg: any, mat: THREE.MeshBasicMaterial) => {
+    const [{ localUri }] = await Asset.loadAsync(badgeImg);
+    const tex = new TextureLoader().load(localUri!);
 
-      // Use expo-three TextureLoader which handles Expo assets better
-      const [{ localUri }] = await Asset.loadAsync(badgeImage);
-      const texture = new TextureLoader().load(localUri!);
+    tex.center.set(0.5, 0.5); // rotate around center
+    tex.rotation = Math.PI / 2; // 90°
 
-      console.log('✅ Expo-three texture loaded successfully!');
-      console.log('Texture details:', {
-        width: texture.image?.width,
-        height: texture.image?.height,
-      });
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping; // allow mirroring on U
+    tex.repeat.set(-1, 1); // mirror once on U
+    tex.offset.set(0, 0); // shift mirror back into view
 
-      // Configure texture
-      texture.wrapS = THREE.ClampToEdgeWrapping;
-      texture.wrapT = THREE.ClampToEdgeWrapping;
-      texture.flipY = false;
-      texture.minFilter = THREE.LinearFilter;
-      texture.magFilter = THREE.LinearFilter;
+    tex.flipY = false; // Expo/React-Native images are already right-side-up
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
 
-      // Rotate texture 90 degrees to the right (clockwise)
-      texture.rotation = Math.PI / 2;
-
-      // Center the texture rotation
-      texture.center.set(0.5, 0.5);
-
-      // Adjust texture offset and repeat for better alignment
-      texture.offset.set(0, 0);
-      texture.repeat.set(1, 1);
-
-      // Update material
-      material.map = texture;
-      material.color.setHex(0xffffff);
-      material.needsUpdate = true;
-
-      console.log('✅ Material updated with expo-three texture');
-    } catch (error) {
-      console.error('❌ Expo-three texture loading failed:', error);
-      // Change to red to indicate error
-      material.color.setHex(0xff0000);
-      material.needsUpdate = true;
-    }
+    mat.map = tex;
+    mat.needsUpdate = true;
   };
 
-  // Animation loop
+  /* ------------------------------------------------------------------ */
+  /*  Animation loop                                                    */
+  /* ------------------------------------------------------------------ */
   useEffect(() => {
     if (!gl || !scene || !camera || !renderer || !medal) return;
 
-    let animationId: number;
+    let id: number;
     const animate = () => {
       if (!isInteracting.current) {
         autoRotation.current += 0.008;
@@ -201,18 +153,16 @@ export default function Badge3D({ badgeImage, courtName, onPress, isModal = fals
 
       renderer.render(scene, camera);
       gl.endFrameEXP();
-      animationId = requestAnimationFrame(animate);
+      id = requestAnimationFrame(animate);
     };
 
     animate();
-
-    return () => {
-      if (animationId) {
-        cancelAnimationFrame(animationId);
-      }
-    };
+    return () => cancelAnimationFrame(id);
   }, [gl, scene, camera, renderer, medal, isModal]);
 
+  /* ------------------------------------------------------------------ */
+  /*  JSX                                                               */
+  /* ------------------------------------------------------------------ */
   return (
     <View style={{ width: 200, height: 200 }} {...panResponder.panHandlers}>
       <GLView style={{ flex: 1 }} onContextCreate={onContextCreate} />
