@@ -6,7 +6,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { authClient } from '@/lib/auth-client';
 import { useAuth } from '@/lib/auth-context';
 import { Image } from 'expo-image';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -65,6 +65,8 @@ export default function ProfileScreen() {
       'hudson-river': 'Hudson River',
       'randalls-island': 'Randalls Island',
       riverside: 'Riverside',
+      mccarren: 'McCarren',
+      'prospect-park': 'Prospect Park',
     };
     return nameMap[courtName] || courtName;
   };

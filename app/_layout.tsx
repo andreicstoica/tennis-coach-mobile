@@ -47,15 +47,18 @@ function NavigationWrapper() {
 
 export default function RootLayout() {
   const { isDarkColorScheme } = useColorScheme();
-  const [loaded] = useFonts({
-    LumberSans: require('../assets/fonts/LumberSans.ttf'),
+  const [fontsLoaded] = useFonts({
+    IBMPlexSans: require('../assets/fonts/IBMPlexSansRegular.ttf'),
+    'IBMPlexSans-Medium': require('../assets/fonts/IBMPlexSansMedium.ttf'),
+    'IBMPlexSans-SemiBold': require('../assets/fonts/IBMPlexSansSemiBold.ttf'),
+    'IBMPlexSans-Bold': require('../assets/fonts/IBMPlexSansBold.ttf'),
   });
 
   useEffect(() => {
-    if (loaded) {
+    if (fontsLoaded) {
       SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [fontsLoaded]);
 
   useEffect(() => {
     // Handle deep links for OAuth callbacks
@@ -86,7 +89,7 @@ export default function RootLayout() {
     };
   }, []);
 
-  if (!loaded) {
+  if (!fontsLoaded) {
     return null;
   }
 

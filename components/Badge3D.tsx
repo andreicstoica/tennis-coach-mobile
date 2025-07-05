@@ -110,8 +110,8 @@ export default function Badge3D({ badgeImage, courtName, onPress, isModal = fals
     scene.add(medalGroup);
 
     /* lighting */
-    scene.add(new THREE.AmbientLight(0x404040, 0.8));
-    const dir = new THREE.DirectionalLight(0xffffff, 0.6);
+    scene.add(new THREE.AmbientLight(0x404040, 0.3));
+    const dir = new THREE.DirectionalLight(0xffffff, 0.2);
     dir.position.set(2, 2, 2);
     scene.add(dir);
 
