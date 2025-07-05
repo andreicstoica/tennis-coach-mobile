@@ -22,7 +22,10 @@ export function FinalWelcomeScreen({ onStart }: FinalWelcomeScreenProps) {
         <View
           style={[
             styles.celebrationIcon,
-            { backgroundColor: colorScheme === 'dark' ? '#10b981' : '#059669' },
+            {
+              backgroundColor: colorScheme === 'dark' ? '#10b981' : '#059669',
+              shadowColor: colorScheme === 'dark' ? '#ffffff' : '#000000',
+            },
           ]}>
           <ThemedText style={styles.celebrationIconText}>🎉</ThemedText>
         </View>
@@ -42,7 +45,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    // Remove backgroundColor - handled dynamically
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
     shadowRadius: 16,

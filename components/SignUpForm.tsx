@@ -121,6 +121,8 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
         alignSelf: 'center',
       }}>
       <ThemedText
+        lightColor="#000000"
+        darkColor="#ffffff"
         type="title"
         style={{
           textAlign: 'center',
@@ -133,7 +135,11 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
 
       {/* Name Input */}
       <View style={{ marginBottom: 16, width: '100%', alignSelf: 'stretch' }}>
-        <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
+        <ThemedText
+          lightColor="#000000"
+          darkColor="#ffffff"
+          type="defaultSemiBold"
+          style={{ marginBottom: 8 }}>
           Username
         </ThemedText>
         <TextInput
@@ -169,7 +175,11 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
 
       {/* Email Input */}
       <View style={{ marginBottom: 16, width: '100%', alignSelf: 'stretch' }}>
-        <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
+        <ThemedText
+          lightColor="#000000"
+          darkColor="#ffffff"
+          type="defaultSemiBold"
+          style={{ marginBottom: 8 }}>
           Email
         </ThemedText>
         <TextInput
@@ -206,7 +216,11 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
 
       {/* Password Input */}
       <View style={{ marginBottom: 16, width: '100%', alignSelf: 'stretch' }}>
-        <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
+        <ThemedText
+          lightColor="#000000"
+          darkColor="#ffffff"
+          type="defaultSemiBold"
+          style={{ marginBottom: 8 }}>
           Password
         </ThemedText>
         <TextInput
@@ -246,7 +260,11 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
 
       {/* Confirm Password Input */}
       <View style={{ marginBottom: 24, width: '100%', alignSelf: 'stretch' }}>
-        <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
+        <ThemedText
+          lightColor="#000000"
+          darkColor="#ffffff"
+          type="defaultSemiBold"
+          style={{ marginBottom: 8 }}>
           Confirm Password
         </ThemedText>
         <TextInput
@@ -337,7 +355,10 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
           width: '100%',
         }}>
         <IconSymbol size={20} name="globe" color={colorScheme === 'dark' ? '#ffffff' : '#000000'} />
-        <ThemedText style={{ fontSize: 16, fontWeight: '600' }}>
+        <ThemedText
+          lightColor="#000000"
+          darkColor="#ffffff"
+          style={{ fontSize: 16, fontWeight: '600' }}>
           {isGoogleSigningUp ? 'Signing up with Google...' : 'Continue with Google'}
         </ThemedText>
       </TouchableOpacity>

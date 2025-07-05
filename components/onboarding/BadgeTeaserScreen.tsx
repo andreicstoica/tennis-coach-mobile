@@ -32,14 +32,25 @@ export function BadgeTeaserScreen({
       currentStep={currentStep}
       totalSteps={totalSteps}>
       <View style={styles.badgeContainer}>
-        <View style={styles.badgeCard}>
+        <View
+          style={[
+            styles.badgeCard,
+            {
+              backgroundColor: colorScheme === 'dark' ? '#2a2a2a' : '#f8f9fa',
+              borderColor: colorScheme === 'dark' ? '#444444' : '#e9ecef',
+            },
+          ]}>
           <Image
             source={require('../../assets/images/badges/central-park.png')}
             style={styles.badgeImage}
             contentFit="contain"
           />
-          <ThemedText style={styles.badgeName}>Central Park</ThemedText>
-          <ThemedText style={styles.badgeDescription}>Your first badge awaits!</ThemedText>
+          <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.badgeName}>
+            Central Park
+          </ThemedText>
+          <ThemedText lightColor="#666666" darkColor="#cccccc" style={styles.badgeDescription}>
+            Your first badge awaits!
+          </ThemedText>
         </View>
       </View>
     </OnboardingScreen>
@@ -56,10 +67,8 @@ const styles = StyleSheet.create({
   badgeCard: {
     alignItems: 'center',
     padding: 24,
-    backgroundColor: '#f8f9fa',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#e9ecef',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -80,7 +89,6 @@ const styles = StyleSheet.create({
   },
   badgeDescription: {
     fontSize: 14,
-    color: '#666',
     textAlign: 'center',
     fontStyle: 'italic',
   },

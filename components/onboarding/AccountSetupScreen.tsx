@@ -36,15 +36,22 @@ export function AccountSetupScreen({
       hideMainButton={true}>
       <View style={styles.buttonsContainer}>
         <Button onPress={onSignUp} style={styles.primaryButton} className="mb-4 w-full">
-          <ThemedText style={styles.primaryButtonText}>Sign Up</ThemedText>
+          <ThemedText lightColor="#ffffff" darkColor="#ffffff" style={styles.primaryButtonText}>
+            Sign Up
+          </ThemedText>
         </Button>
 
         <Button
           variant="outline"
           onPress={onSignIn}
-          style={styles.secondaryButton}
+          style={[
+            styles.secondaryButton,
+            { borderColor: colorScheme === 'dark' ? '#ffffff' : '#000000' },
+          ]}
           className="w-full">
-          <ThemedText style={styles.secondaryButtonText}>Sign In</ThemedText>
+          <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.secondaryButtonText}>
+            Sign In
+          </ThemedText>
         </Button>
       </View>
     </OnboardingScreen>
@@ -63,7 +70,6 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: 18,
     fontWeight: '600',
-    color: 'white',
   },
   secondaryButton: {
     height: 56,

@@ -7,6 +7,7 @@ import { useTRPC } from '@/lib/trpc/trpc';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 
+import { useColorScheme } from '@/hooks/useColorScheme';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useMemo, useState } from 'react';
@@ -38,6 +39,7 @@ interface Plan {
 
 export default function PreviousScreen() {
   const { user, isLoading: authLoading } = useAuth();
+  const { colorScheme } = useColorScheme();
   const router = useRouter();
   const trpc = useTRPC();
   const insets = useSafeAreaInsets();
@@ -263,11 +265,11 @@ export default function PreviousScreen() {
       {/* Progressive gradient overlay at top - only when scrolling */}
       {showBlur && (
         <LinearGradient
-          colors={[
-            'rgba(255, 255, 255, 0.95)',
-            'rgba(255, 255, 255, 0.7)',
-            'rgba(255, 255, 255, 0)',
-          ]}
+          colors={
+            colorScheme === 'dark'
+              ? ['rgba(0, 0, 0, 0.95)', 'rgba(0, 0, 0, 0.7)', 'rgba(0, 0, 0, 0)']
+              : ['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.7)', 'rgba(255, 255, 255, 0)']
+          }
           style={[styles.topBlurOverlay, { height: insets.top + 30 }]}
         />
       )}
@@ -290,29 +292,54 @@ export default function PreviousScreen() {
             />
           }>
           <ThemedView style={styles.titleContainer}>
-            <ThemedText type="title">Previous Sessions</ThemedText>
+            <ThemedText lightColor="#000000" darkColor="#ffffff" type="title">
+              Previous Sessions
+            </ThemedText>
           </ThemedView>
 
           {/* Loading indicator */}
           {refreshing && (
-            <Animated.View style={[styles.loadingContainer, { opacity: fadeAnim }]}>
+            <Animated.View
+              style={[
+                styles.loadingContainer,
+                {
+                  opacity: fadeAnim,
+                  backgroundColor:
+                    colorScheme === 'dark' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(0, 122, 255, 0.1)',
+                  borderColor:
+                    colorScheme === 'dark' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(0, 122, 255, 0.2)',
+                },
+              ]}>
               <ActivityIndicator size="small" color="#007AFF" style={styles.loadingSpinner} />
-              <ThemedText style={styles.loadingText}>Refreshing sessions...</ThemedText>
+              <ThemedText lightColor="#007AFF" darkColor="#3b82f6" style={styles.loadingText}>
+                Refreshing sessions...
+              </ThemedText>
             </Animated.View>
           )}
 
           {/* Year Filter */}
           {years.length > 0 && (
             <ThemedView style={styles.filterSection}>
-              <ThemedText style={styles.filterLabel}>Year</ThemedText>
+              <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.filterLabel}>
+                Year
+              </ThemedText>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 style={styles.filterScroll}>
                 <TouchableOpacity
-                  style={[styles.filterChip, !selectedYear && styles.filterChipActive]}
+                  style={[
+                    styles.filterChip,
+                    !selectedYear && styles.filterChipActive,
+                    {
+                      backgroundColor:
+                        colorScheme === 'dark' ? '#2a2a2a' : 'rgba(255, 255, 255, 0.7)',
+                    },
+                  ]}
                   onPress={clearFilters}>
                   <ThemedText
+                    lightColor="#000000"
+                    darkColor="#ffffff"
                     style={[styles.filterChipText, !selectedYear && styles.filterChipTextActive]}>
                     All
                   </ThemedText>
@@ -320,9 +347,18 @@ export default function PreviousScreen() {
                 {years.map((year) => (
                   <TouchableOpacity
                     key={year}
-                    style={[styles.filterChip, selectedYear === year && styles.filterChipActive]}
+                    style={[
+                      styles.filterChip,
+                      selectedYear === year && styles.filterChipActive,
+                      {
+                        backgroundColor:
+                          colorScheme === 'dark' ? '#2a2a2a' : 'rgba(255, 255, 255, 0.7)',
+                      },
+                    ]}
                     onPress={() => handleYearPress(year)}>
                     <ThemedText
+                      lightColor="#000000"
+                      darkColor="#ffffff"
                       style={[
                         styles.filterChipText,
                         selectedYear === year && styles.filterChipTextActive,
@@ -338,15 +374,26 @@ export default function PreviousScreen() {
           {/* Month Filter */}
           {selectedYear && months.length > 0 && (
             <ThemedView style={styles.filterSection}>
-              <ThemedText style={styles.filterLabel}>Month</ThemedText>
+              <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.filterLabel}>
+                Month
+              </ThemedText>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 style={styles.filterScroll}>
                 <TouchableOpacity
-                  style={[styles.filterChip, !selectedMonth && styles.filterChipActive]}
+                  style={[
+                    styles.filterChip,
+                    !selectedMonth && styles.filterChipActive,
+                    {
+                      backgroundColor:
+                        colorScheme === 'dark' ? '#2a2a2a' : 'rgba(255, 255, 255, 0.7)',
+                    },
+                  ]}
                   onPress={() => setSelectedMonth(null)}>
                   <ThemedText
+                    lightColor="#000000"
+                    darkColor="#ffffff"
                     style={[styles.filterChipText, !selectedMonth && styles.filterChipTextActive]}>
                     All
                   </ThemedText>
@@ -354,9 +401,18 @@ export default function PreviousScreen() {
                 {months.map((month) => (
                   <TouchableOpacity
                     key={month}
-                    style={[styles.filterChip, selectedMonth === month && styles.filterChipActive]}
+                    style={[
+                      styles.filterChip,
+                      selectedMonth === month && styles.filterChipActive,
+                      {
+                        backgroundColor:
+                          colorScheme === 'dark' ? '#2a2a2a' : 'rgba(255, 255, 255, 0.7)',
+                      },
+                    ]}
                     onPress={() => handleMonthPress(month)}>
                     <ThemedText
+                      lightColor="#000000"
+                      darkColor="#ffffff"
                       style={[
                         styles.filterChipText,
                         selectedMonth === month && styles.filterChipTextActive,
@@ -382,7 +438,7 @@ export default function PreviousScreen() {
             const focusEmoji = (() => {
               const focus = session.focusArea.toLowerCase();
               if (/serve|serving/.test(focus)) return '🎯';
-              if (/backhand/.test(focus)) return '��';
+              if (/backhand/.test(focus)) return '🏐';
               if (/footwork|movement|agility/.test(focus)) return '💃';
               if (/volley/.test(focus)) return '🏐';
               if (/forehand/.test(focus)) return '🫲';
@@ -416,24 +472,70 @@ export default function PreviousScreen() {
                   </ThemedText>
                 </ThemedView>
                 {/* Notebook Cover */}
-                <ThemedView style={styles.notebookCover}>
+                <ThemedView
+                  lightColor="#FFFDF7"
+                  darkColor="#1a1a1a"
+                  style={[
+                    styles.notebookCover,
+                    {
+                      borderColor: colorScheme === 'dark' ? '#444444' : '#E5E5E5',
+                    },
+                  ]}>
                   {plan ? (
                     <>
-                      <ThemedText style={styles.coverRow} numberOfLines={1} ellipsizeMode="tail">
-                        <ThemedText style={styles.coverLabel}> Warmup: </ThemedText>
+                      <ThemedText
+                        lightColor="#333333"
+                        darkColor="#e5e5e5"
+                        style={styles.coverRow}
+                        numberOfLines={1}
+                        ellipsizeMode="tail">
+                        <ThemedText
+                          lightColor="#007AFF"
+                          darkColor="#3b82f6"
+                          style={styles.coverLabel}>
+                          {' '}
+                          Warmup:{' '}
+                        </ThemedText>
                         {plan.warmup}
                       </ThemedText>
-                      <ThemedText style={styles.coverRow} numberOfLines={1} ellipsizeMode="tail">
-                        <ThemedText style={styles.coverLabel}> Drill: </ThemedText>
+                      <ThemedText
+                        lightColor="#333333"
+                        darkColor="#e5e5e5"
+                        style={styles.coverRow}
+                        numberOfLines={1}
+                        ellipsizeMode="tail">
+                        <ThemedText
+                          lightColor="#007AFF"
+                          darkColor="#3b82f6"
+                          style={styles.coverLabel}>
+                          {' '}
+                          Drill:{' '}
+                        </ThemedText>
                         {plan.drill}
                       </ThemedText>
-                      <ThemedText style={styles.coverRow} numberOfLines={1} ellipsizeMode="tail">
-                        <ThemedText style={styles.coverLabel}> Game: </ThemedText>
+                      <ThemedText
+                        lightColor="#333333"
+                        darkColor="#e5e5e5"
+                        style={styles.coverRow}
+                        numberOfLines={1}
+                        ellipsizeMode="tail">
+                        <ThemedText
+                          lightColor="#007AFF"
+                          darkColor="#3b82f6"
+                          style={styles.coverLabel}>
+                          {' '}
+                          Game:{' '}
+                        </ThemedText>
                         {plan.game}
                       </ThemedText>
                     </>
                   ) : (
-                    <ThemedText style={styles.coverText} numberOfLines={2} ellipsizeMode="tail">
+                    <ThemedText
+                      lightColor="#333333"
+                      darkColor="#e5e5e5"
+                      style={styles.coverText}
+                      numberOfLines={2}
+                      ellipsizeMode="tail">
                       No plan available.
                     </ThemedText>
                   )}
@@ -444,7 +546,7 @@ export default function PreviousScreen() {
 
           {filteredSessions.length === 0 && sessions.length > 0 && (
             <ThemedView style={styles.emptyContainer}>
-              <ThemedText style={styles.emptyText}>
+              <ThemedText lightColor="#666666" darkColor="#999999" style={styles.emptyText}>
                 No sessions found for the selected filters.
               </ThemedText>
             </ThemedView>
@@ -553,7 +655,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     marginRight: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    // Remove backgroundColor - handled dynamically
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.1)',
     shadowColor: '#000',
@@ -569,7 +671,7 @@ const styles = StyleSheet.create({
   filterChipText: {
     fontSize: 14,
     fontWeight: '500',
-    color: 'rgba(0, 0, 0, 0.7)',
+    // Remove color - handled by ThemedText
   },
   filterChipTextActive: {
     color: '#FFFFFF',
@@ -614,32 +716,32 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   notebookCover: {
-    backgroundColor: '#FFFDF7',
+    // Remove backgroundColor - handled by ThemedView
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
     padding: 14,
     borderWidth: 1.5,
-    borderColor: '#E5E5E5',
+    // Remove borderColor - handled dynamically
     borderStyle: 'dotted',
     minHeight: 90,
   },
   coverText: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#333',
+    // Remove color - handled by ThemedText
     opacity: 0.95,
   },
   coverLabel: {
     fontWeight: '700',
-    color: '#007AFF',
+    // Remove color - handled by ThemedText
     fontSize: 14,
   },
   coverRow: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#333',
+    // Remove color - handled by ThemedText
     opacity: 0.95,
     marginBottom: 4,
   },
@@ -649,17 +751,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
     marginBottom: 16,
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    // Remove backgroundColor and borderColor - handled dynamically
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(0, 122, 255, 0.2)',
   },
   loadingSpinner: {
     marginRight: 8,
   },
   loadingText: {
     fontSize: 14,
-    color: '#007AFF',
+    // Remove color - handled by ThemedText
     fontWeight: '500',
   },
   topLoader: {

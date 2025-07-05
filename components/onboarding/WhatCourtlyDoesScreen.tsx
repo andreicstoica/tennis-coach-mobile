@@ -102,6 +102,7 @@ export function WhatCourtlyDoesScreen({
             transform: [{ scale }, { translateY }],
             opacity,
             backgroundColor: colorScheme === 'dark' ? '#1a1a1a' : '#ffffff',
+            borderColor: colorScheme === 'dark' ? '#444444' : 'rgba(0,0,0,0.05)',
             shadowColor: colorScheme === 'dark' ? '#000' : '#000',
             shadowOffset: { width: 0, height: 8 },
             shadowOpacity: colorScheme === 'dark' ? 0.5 : 0.1,
@@ -110,12 +111,23 @@ export function WhatCourtlyDoesScreen({
           },
         ]}>
         <View style={styles.cardContent}>
-          <View style={styles.iconContainer}>
+          <View
+            style={[
+              styles.iconContainer,
+              {
+                backgroundColor:
+                  colorScheme === 'dark' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(0, 122, 255, 0.1)',
+              },
+            ]}>
             <ThemedText style={styles.cardIcon}>{example.icon}</ThemedText>
           </View>
           <View style={styles.textContainer}>
-            <ThemedText style={styles.cardTitle}>{example.text}</ThemedText>
-            <ThemedText style={styles.cardDescription}>{example.description}</ThemedText>
+            <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.cardTitle}>
+              {example.text}
+            </ThemedText>
+            <ThemedText lightColor="#666666" darkColor="#cccccc" style={styles.cardDescription}>
+              {example.description}
+            </ThemedText>
           </View>
         </View>
       </Animated.View>
@@ -202,7 +214,6 @@ const styles = StyleSheet.create({
     marginHorizontal: CARD_SPACING / 2,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
     overflow: 'hidden',
     width: CARD_WIDTH,
   },
@@ -215,7 +226,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,

@@ -41,7 +41,7 @@ export function OnboardingScreen({
   const { colorScheme } = useColorScheme();
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView lightColor="#ffffff" darkColor="#000000" style={styles.container}>
       {/* Header with Progress Indicators */}
       <View style={styles.header}>
         {/* Progress indicators at the top */}
@@ -73,7 +73,9 @@ export function OnboardingScreen({
         {/* Back button below progress indicators */}
         {showBack && onBack && (
           <Button variant="ghost" onPress={onBack} style={styles.backButton}>
-            <ThemedText>← Back</ThemedText>
+            <ThemedText lightColor="#000000" darkColor="#ffffff">
+              ← Back
+            </ThemedText>
           </Button>
         )}
       </View>
@@ -81,16 +83,24 @@ export function OnboardingScreen({
       {/* Content */}
       <View style={styles.content}>
         <View style={styles.textContainer}>
-          <ThemedText type="title" style={styles.title}>
+          <ThemedText lightColor="#000000" darkColor="#ffffff" type="title" style={styles.title}>
             {title}
           </ThemedText>
           {subtitle && (
-            <ThemedText type="defaultSemiBold" style={styles.subtitle}>
+            <ThemedText
+              lightColor="#000000"
+              darkColor="#ffffff"
+              type="defaultSemiBold"
+              style={styles.subtitle}>
               {subtitle}
             </ThemedText>
           )}
           {description && (
-            <ThemedText type="default" style={styles.description}>
+            <ThemedText
+              lightColor="#666666"
+              darkColor="#cccccc"
+              type="default"
+              style={styles.description}>
               {description}
             </ThemedText>
           )}
@@ -103,12 +113,16 @@ export function OnboardingScreen({
       <View style={styles.footer}>
         {!hideMainButton && (
           <Button onPress={onButtonPress} style={styles.button} className="w-full">
-            <ThemedText style={styles.buttonText}>{buttonText}</ThemedText>
+            <ThemedText lightColor="#ffffff" darkColor="#ffffff" style={styles.buttonText}>
+              {buttonText}
+            </ThemedText>
           </Button>
         )}
         {showSkip && onSkip && (
           <Button variant="ghost" onPress={onSkip} style={styles.skipButton}>
-            <ThemedText style={styles.skipButtonText}>Skip</ThemedText>
+            <ThemedText lightColor="#9ca3af" darkColor="#6b7280" style={styles.skipButtonText}>
+              Skip
+            </ThemedText>
           </Button>
         )}
       </View>
@@ -152,7 +166,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   skipButtonText: {
-    color: '#9ca3af',
+    // Remove color: '#9ca3af' - handled by ThemedText
   },
   content: {
     flex: 1,
@@ -198,6 +212,6 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 18,
     fontWeight: '600',
-    color: 'white',
+    // Remove color: 'white' - handled by ThemedText
   },
 });

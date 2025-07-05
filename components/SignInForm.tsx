@@ -102,6 +102,8 @@ export function SignInForm({ onSubmit, onSwitchToSignUp }: SignInFormProps) {
         alignSelf: 'center',
       }}>
       <ThemedText
+        lightColor="#000000"
+        darkColor="#ffffff"
         type="title"
         style={{
           textAlign: 'center',
@@ -114,7 +116,11 @@ export function SignInForm({ onSubmit, onSwitchToSignUp }: SignInFormProps) {
 
       {/* Email Input */}
       <View style={{ marginBottom: 16, width: '100%', alignSelf: 'stretch' }}>
-        <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
+        <ThemedText
+          lightColor="#000000"
+          darkColor="#ffffff"
+          type="defaultSemiBold"
+          style={{ marginBottom: 8 }}>
           Email
         </ThemedText>
         <TextInput
@@ -151,7 +157,11 @@ export function SignInForm({ onSubmit, onSwitchToSignUp }: SignInFormProps) {
 
       {/* Password Input */}
       <View style={{ marginBottom: 24, width: '100%', alignSelf: 'stretch' }}>
-        <ThemedText type="defaultSemiBold" style={{ marginBottom: 8 }}>
+        <ThemedText
+          lightColor="#000000"
+          darkColor="#ffffff"
+          type="defaultSemiBold"
+          style={{ marginBottom: 8 }}>
           Password
         </ThemedText>
         <TextInput
@@ -180,7 +190,10 @@ export function SignInForm({ onSubmit, onSwitchToSignUp }: SignInFormProps) {
           secureTextEntry
         />
         {errors.password && (
-          <ThemedText style={{ color: '#ef4444', marginTop: 4, fontSize: 13 }}>
+          <ThemedText
+            lightColor="#dc2626"
+            darkColor="#f87171"
+            style={{ marginTop: 4, fontSize: 13 }}>
             {errors.password}
           </ThemedText>
         )}
@@ -268,7 +281,12 @@ export function SignInForm({ onSubmit, onSwitchToSignUp }: SignInFormProps) {
         }}
         activeOpacity={0.8}>
         <IconSymbol name="globe" size={20} color={colorScheme === 'dark' ? '#ffffff' : '#000000'} />
-        <ThemedText style={{ fontSize: 16, fontWeight: '600' }}>Continue with Google</ThemedText>
+        <ThemedText
+          lightColor="#000000"
+          darkColor="#ffffff"
+          style={{ fontSize: 16, fontWeight: '600' }}>
+          Continue with Google
+        </ThemedText>
       </TouchableOpacity>
 
       {/* Switch to Sign Up */}

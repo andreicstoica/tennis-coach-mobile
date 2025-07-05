@@ -56,7 +56,15 @@ const ChatSchema = z
   .passthrough(); // This allows additional fields to pass through
 
 // Simple markdown parser component
-const MarkdownText = ({ content, style }: { content: string; style?: any }) => {
+const MarkdownText = ({
+  content,
+  style,
+  colorScheme,
+}: {
+  content: string;
+  style?: any;
+  colorScheme?: 'light' | 'dark' | null | undefined;
+}) => {
   const renderMarkdown = (text: string) => {
     // Handle headers (# ## ###)
     text = text.replace(/^(#{1,3})\s+(.*$)/gm, (match, hashes, title) => {
@@ -85,13 +93,19 @@ const MarkdownText = ({ content, style }: { content: string; style?: any }) => {
           const level = headerMatch[1].length;
           const headerStyle =
             level === 1
-              ? { fontSize: 20, fontWeight: 'bold', marginVertical: 4 } // Reduced from 8
+              ? { fontSize: 20, fontWeight: 'bold', marginVertical: 4 }
               : level === 2
-                ? { fontSize: 18, fontWeight: 'bold', marginVertical: 3 } // Reduced from 6
-                : { fontSize: 16, fontWeight: 'bold', marginVertical: 2 }; // Reduced from 4
+                ? { fontSize: 18, fontWeight: 'bold', marginVertical: 3 }
+                : { fontSize: 16, fontWeight: 'bold', marginVertical: 2 };
 
           return (
-            <Text key={lineIndex} style={[style, headerStyle]}>
+            <Text
+              key={lineIndex}
+              style={[
+                style,
+                headerStyle,
+                { color: colorScheme === 'dark' ? '#ffffff' : '#000000' },
+              ]}>
               {headerMatch[2]}
             </Text>
           );
@@ -141,7 +155,15 @@ const MarkdownText = ({ content, style }: { content: string; style?: any }) => {
 };
 
 // Accordion component for practice plan sections
-const PracticePlanAccordion = ({ content, textStyle }: { content: string; textStyle?: any }) => {
+const PracticePlanAccordion = ({
+  content,
+  textStyle,
+  colorScheme,
+}: {
+  content: string;
+  textStyle?: any;
+  colorScheme: 'light' | 'dark' | null | undefined;
+}) => {
   const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
     warmup: true, // Default open
     drill: false,
@@ -328,13 +350,12 @@ const PracticePlanAccordion = ({ content, textStyle }: { content: string; textSt
       {/* Show a preview when all sections are collapsed */}
       {allCollapsed && (
         <View style={styles.collapsedPreview}>
-          <Text style={[textStyle, styles.previewText]}>
-            Practice plan with{' '}
-            {[sections.warmup && 'warmup', sections.drill && 'drill', sections.game && 'game']
-              .filter(Boolean)
-              .join(', ')}{' '}
-            sections:
-          </Text>
+          <ThemedText
+            lightColor="#666666"
+            darkColor="#cccccc"
+            style={[textStyle, styles.previewText]}>
+            Practice plan:
+          </ThemedText>
         </View>
       )}
 
@@ -379,6 +400,7 @@ const PracticePlanAccordion = ({ content, textStyle }: { content: string; textSt
               style={[
                 styles.accordionContent,
                 {
+                  backgroundColor: colorScheme === 'dark' ? '#2a2a2a' : '#f8f9fa',
                   maxHeight: animatedValue.interpolate({
                     inputRange: [0, 1],
                     outputRange: [0, 1000], // Adjust max height as needed
@@ -389,7 +411,11 @@ const PracticePlanAccordion = ({ content, textStyle }: { content: string; textSt
                   }),
                 },
               ]}>
-              <MarkdownText content={sectionContent} style={textStyle} />
+              <MarkdownText
+                content={sectionContent}
+                style={[textStyle, { color: colorScheme === 'dark' ? '#ffffff' : '#000000' }]}
+                colorScheme={colorScheme}
+              />
             </Animated.View>
           </View>
         );
@@ -402,9 +428,11 @@ const PracticePlanAccordion = ({ content, textStyle }: { content: string; textSt
 const MessageContent = ({
   message,
   textStyle,
+  colorScheme,
 }: {
   message: typeof ChatMessageSchema._type;
   textStyle?: any;
+  colorScheme: 'light' | 'dark' | null | undefined;
 }) => {
   // Improved smart content detection - look for any practice plan indicators
   const isPracticePlan =
@@ -413,12 +441,18 @@ const MessageContent = ({
     message.content.length > 50; // Content length check instead of line count
 
   if (isPracticePlan) {
-    return <PracticePlanAccordion content={message.content} textStyle={textStyle} />;
+    return (
+      <PracticePlanAccordion
+        content={message.content}
+        textStyle={textStyle}
+        colorScheme={colorScheme}
+      />
+    );
   }
 
   // For other assistant messages, use markdown
   if (message.role === 'assistant') {
-    return <MarkdownText content={message.content} style={textStyle} />;
+    return <MarkdownText content={message.content} style={textStyle} colorScheme={colorScheme} />;
   }
 
   // For user messages, use plain text
@@ -434,8 +468,8 @@ const THINKING_MESSAGES = [
   '👌 Setting up the perfect practice session...',
   '🫦 Nearly there...!',
   '🎈 Checking gluten-free menu for Novak...',
-  '🛟 Tossing Daniil a stuffy after that R1 exit...',
-  "🕶️ Waiting for Naomi's latest fit...",
+  '🧸 Tossing Daniil a stuffy after that R1 exit...',
+  "🕶️ Modeling Naomi's latest dress...",
   "🍌 Peeling a perfect banana for Andy's changeover...",
   "🎥 Rewatching Roger's touching god highlight reel...",
   "📡 Tracking Ons's drop-shot trajectory...",
@@ -762,11 +796,22 @@ export default function PracticeSession() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <ThemedView style={styles.container}>
           {/* Header */}
-          <ThemedView style={styles.header}>
+          <ThemedView
+            style={[
+              styles.header,
+              {
+                borderBottomColor:
+                  colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+              },
+            ]}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-              <ThemedText style={styles.backButtonText}>← Back</ThemedText>
+              <ThemedText lightColor="#007AFF" darkColor="#3b82f6" style={styles.backButtonText}>
+                ← Back
+              </ThemedText>
             </TouchableOpacity>
-            <ThemedText style={styles.chatTitle}>{parsedChat.name}</ThemedText>
+            <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.chatTitle}>
+              {parsedChat.name}
+            </ThemedText>
           </ThemedView>
 
           {/* Messages */}
@@ -785,38 +830,54 @@ export default function PracticeSession() {
               uniqueMessages.map((message: typeof ChatMessageSchema._type, index: number) => (
                 <ThemedView
                   key={`${message.id}-${index}`}
+                  lightColor={message.role === 'user' ? '#007AFF' : 'rgba(0, 0, 0, 0.05)'}
+                  darkColor={message.role === 'user' ? '#007AFF' : 'rgba(255, 255, 255, 0.1)'}
                   style={[
                     styles.messageContainer,
                     message.role === 'user' ? styles.userMessage : styles.assistantMessage,
                   ]}>
                   <ThemedText
+                    lightColor={message.role === 'user' ? '#ffffff' : '#000000'}
+                    darkColor={message.role === 'user' ? '#ffffff' : '#ffffff'}
                     style={[styles.messageRole, message.role === 'user' && styles.userText]}>
                     {message.role === 'user' ? 'You' : 'Coach'}
                   </ThemedText>
                   <MessageContent
                     message={message}
-                    textStyle={[styles.messageContent, message.role === 'user' && styles.userText]}
+                    textStyle={[
+                      styles.messageContent,
+                      message.role === 'user' && styles.userText,
+                      message.role === 'assistant' && {
+                        color: colorScheme === 'dark' ? '#ffffff' : '#000000',
+                      },
+                    ]}
+                    colorScheme={colorScheme}
                   />
                 </ThemedView>
               ))
             ) : (
               <ThemedView style={styles.emptyContainer}>
-                <ThemedText style={styles.emptyText}>No messages in this chat yet.</ThemedText>
+                <ThemedText lightColor="#666666" darkColor="#999999" style={styles.emptyText}>
+                  No messages in this chat yet.
+                </ThemedText>
               </ThemedView>
             )}
             {/* AI Waiting Indicator */}
             {waitingForAI && (
               <ThemedView style={styles.waitingIndicator}>
-                <View style={styles.waitingContent}>
+                <ThemedView
+                  lightColor="rgba(0, 0, 0, 0.05)"
+                  darkColor="rgba(255, 255, 255, 0.1)"
+                  style={styles.waitingContent}>
                   <ActivityIndicator
                     size="small"
                     color={colorScheme === 'dark' ? '#ffffff' : '#666666'}
                     style={styles.waitingSpinner}
                   />
-                  <ThemedText style={styles.waitingText}>
+                  <ThemedText lightColor="#666666" darkColor="#cccccc" style={styles.waitingText}>
                     {THINKING_MESSAGES[currentThinkingIndex]}
                   </ThemedText>
-                </View>
+                </ThemedView>
               </ThemedView>
             )}
           </ScrollView>
@@ -868,7 +929,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+    // Remove borderBottomColor - handled dynamically
   },
   backButton: {
     paddingHorizontal: 8,
@@ -877,14 +938,15 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#007AFF',
+    // Remove color - handled by ThemedText
   },
   chatTitle: {
     flex: 1,
     fontSize: 18,
     fontWeight: '700',
     textAlign: 'center',
-    marginRight: 56, // Compensate for back button width
+    marginRight: 56,
+    // Remove any color property
   },
   messagesContainer: {
     flex: 1,
@@ -905,7 +967,7 @@ const styles = StyleSheet.create({
   },
   assistantMessage: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    // Remove backgroundColor - handled by ThemedView
     maxWidth: '95%', // Wider for coach messages with accordions
   },
   messageRole: {
@@ -971,20 +1033,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   accordionContent: {
-    backgroundColor: '#f8f9fa',
-    padding: 16, // Increased back to 16 for more text padding
+    // Remove backgroundColor - handled dynamically
+    padding: 16,
     borderBottomLeftRadius: 12,
     borderBottomRightRadius: 12,
   },
   collapsedPreview: {
-    padding: 12, // Reduced from 16
-    backgroundColor: '#f0f0f0',
+    padding: 12,
+    // Remove backgroundColor - no background needed
     borderRadius: 12,
   },
   previewText: {
     fontSize: 14,
     opacity: 0.7,
     textAlign: 'center',
+    // Remove color - handled by ThemedText
   },
   waitingIndicator: {
     alignSelf: 'flex-start',
@@ -996,10 +1059,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    // Remove backgroundColor - handled by ThemedView
     borderRadius: 16,
     maxWidth: '100%',
-    minWidth: 200, // Ensure minimum width
+    minWidth: 200,
   },
   waitingSpinner: {
     marginRight: 8,
@@ -1009,5 +1072,6 @@ const styles = StyleSheet.create({
     opacity: 0.75,
     fontStyle: 'italic',
     flexWrap: 'wrap',
+    // Remove color - handled by ThemedText
   },
 });

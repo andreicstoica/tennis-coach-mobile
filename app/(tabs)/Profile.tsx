@@ -241,9 +241,6 @@ export default function ProfileScreen() {
         <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.header} type="title">
           Profile
         </ThemedText>
-        <ThemedText lightColor="#888888" darkColor="#aaaaaa" style={styles.subheader}>
-          View details about your profile here.
-        </ThemedText>
         <View style={styles.section}>
           <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.label}>
             Username
@@ -300,13 +297,12 @@ export default function ProfileScreen() {
                 lightColor="#ffffff"
                 darkColor="#1a1a1a"
                 style={{
-                  width: '100%',
-                  height: '100%',
                   borderRadius: 20,
                   padding: 24,
                   alignItems: 'center',
+                  // Remove width: '100%' and height: '100%'
+                  // Let it size based on content
                 }}>
-                {/* All modal content goes here */}
                 <Pressable
                   style={styles.closeButton}
                   onPress={closeBadgeModal}
