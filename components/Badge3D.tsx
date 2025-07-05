@@ -26,25 +26,44 @@ export default function Badge3D({ badgeImage, courtName, onPress, isModal = fals
   const mouseY = useRef(0);
   const autoRotation = useRef(0);
   const isInteracting = useRef(false);
+  const spinVelocity = useRef(0);
+  const medalRotation = useRef(0);
 
   /* ------------------------------------------------------------------ */
   /*  Touch / mouse handler                                             */
   /* ------------------------------------------------------------------ */
   const panResponder = PanResponder.create({
-    onMoveShouldSetPanResponder: () => true,
-    onPanResponderGrant: () => {
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      // More lenient - respond to any horizontal movement
+      return Math.abs(gestureState.dx) > 2;
+    },
+    onPanResponderGrant: (evt) => {
       isInteracting.current = true;
-      onPress?.();
+      // Reset any existing momentum
+      spinVelocity.current = 0;
     },
-    onPanResponderMove: (evt) => {
-      const { locationX, locationY } = evt.nativeEvent;
-      mouseX.current = (locationX / 200) * 2 - 1;
-      mouseY.current = -(locationY / 200) * 2 + 1;
+    onPanResponderMove: (evt, gestureState) => {
+      // Reduced sensitivity for gentler spinning
+      const sensitivity = 0.02; // Reduced from 0.05
+      spinVelocity.current = gestureState.vx * sensitivity;
+
+      // Much more gentle immediate movement feedback
+      medalRotation.current += gestureState.dx * 0.0055; // Reduced from 0.02
     },
-    onPanResponderRelease: () => {
+    onPanResponderRelease: (evt, gestureState) => {
+      // Start momentum-based spinning
       isInteracting.current = false;
-      mouseX.current = 0;
-      mouseY.current = 0;
+
+      // Reduced max velocity for gentler momentum
+      const maxVelocity = 0.2; // Reduced from 0.5
+      spinVelocity.current = Math.max(-maxVelocity, Math.min(maxVelocity, gestureState.vx * 0.005)); // Reduced multiplier
+
+      console.log('Released with velocity:', spinVelocity.current);
+    },
+    onPanResponderTerminate: () => {
+      isInteracting.current = false;
+      spinVelocity.current = 0;
     },
   });
 
@@ -135,29 +154,66 @@ export default function Badge3D({ badgeImage, courtName, onPress, isModal = fals
   useEffect(() => {
     if (!gl || !scene || !camera || !renderer || !medal) return;
 
-    let id: number;
-    const animate = () => {
+    let animationId: number;
+    let lastTime = 0;
+    const targetFPS = 60;
+    const frameInterval = 1000 / targetFPS;
+
+    const animate = (currentTime: number) => {
+      // Throttle to target FPS
+      if (currentTime - lastTime < frameInterval) {
+        animationId = requestAnimationFrame(animate);
+        return;
+      }
+      lastTime = currentTime;
+
       if (!isInteracting.current) {
-        autoRotation.current += 0.008;
-        medal.rotation.y = autoRotation.current;
-        medal.rotation.z = Math.sin(autoRotation.current * 0.3) * 0.08;
+        // Apply momentum spinning
+        if (Math.abs(spinVelocity.current) > 0.001) {
+          // Spin with momentum
+          medalRotation.current += spinVelocity.current;
+          medal.rotation.y = medalRotation.current;
+
+          // Apply friction to slow down
+          spinVelocity.current *= 0.99; // More friction for quicker stops
+
+          // Small wobble during momentum spin
+          medal.rotation.z = Math.sin(medalRotation.current * 3) * 0.02;
+        } else {
+          // Return to auto-rotation when momentum is very low
+          spinVelocity.current = 0;
+          autoRotation.current += 0.005;
+
+          // Smoothly transition back to auto-rotation
+          const targetRotation = autoRotation.current;
+          medalRotation.current += (targetRotation - medalRotation.current) * 0.05; // Faster transition
+          medal.rotation.y = medalRotation.current;
+          medal.rotation.z = Math.sin(autoRotation.current * 0.3) * 0.05;
+        }
 
         if (isModal) {
-          medal.position.y = Math.sin(Date.now() * 0.0015) * 0.1;
-          medal.scale.setScalar(1 + Math.sin(Date.now() * 0.002) * 0.02);
+          medal.position.y = Math.sin(currentTime * 0.0008) * 0.08;
+          const breathingScale = 1 + Math.sin(currentTime * 0.001) * 0.015;
+          medal.scale.setScalar(breathingScale);
         }
       } else {
-        medal.rotation.y = mouseX.current * Math.PI * 0.8;
-        medal.rotation.z = mouseY.current * Math.PI * 0.4;
+        // During interaction, show immediate response
+        medal.rotation.y = medalRotation.current;
+        medal.rotation.z = 0; // Keep stable while interacting
       }
 
       renderer.render(scene, camera);
       gl.endFrameEXP();
-      id = requestAnimationFrame(animate);
+      animationId = requestAnimationFrame(animate);
     };
 
-    animate();
-    return () => cancelAnimationFrame(id);
+    animationId = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    };
   }, [gl, scene, camera, renderer, medal, isModal]);
 
   /* ------------------------------------------------------------------ */
