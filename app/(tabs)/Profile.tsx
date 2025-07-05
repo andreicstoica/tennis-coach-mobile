@@ -1,3 +1,4 @@
+import Badge3D from '@/components/Badge3D';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Button } from '@/components/ui/button';
@@ -317,10 +318,10 @@ export default function ProfileScreen() {
                 </Pressable>
                 {selectedBadge && (
                   <>
-                    <Image
-                      source={getBadgeImage(selectedBadge.courtName)}
-                      style={styles.modalBadgeImage}
-                      contentFit="contain"
+                    <Badge3D
+                      badgeImage={getBadgeImage(selectedBadge.courtName)}
+                      courtName={selectedBadge.courtName}
+                      isModal={true}
                     />
                     <ThemedText
                       lightColor="#000000"

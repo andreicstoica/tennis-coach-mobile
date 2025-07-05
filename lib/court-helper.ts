@@ -7,6 +7,11 @@ it will return the name of the court if it is within 1km, otherwise it will retu
 
 const courtLocations = [
     {
+        name: 'prospect-park',
+        latitude: 40.6511936,
+        longitude: -73.971698
+    },
+    {
         name: 'fort-greene',
         latitude: 40.691086,
         longitude: -73.975854
