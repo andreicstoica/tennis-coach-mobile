@@ -1,3 +1,4 @@
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Image, StyleSheet, View } from 'react-native';
@@ -11,7 +12,7 @@ import { SignInForm } from '~/components/SignInForm';
 import { SignUpForm } from '~/components/SignUpForm';
 import { useAuth } from '~/lib/auth-context';
 
-const TennisCourtBackground = () => (
+const TennisCourtBackground = ({ isDark }: { isDark: boolean }) => (
   <View style={styles.tennisCourtBackgroundContainer} pointerEvents="none">
     <Image
       source={require('@/assets/images/background.png')}
@@ -20,8 +21,13 @@ const TennisCourtBackground = () => (
       accessible
       accessibilityLabel="Tennis court in a park background"
     />
+    {isDark && <View style={styles.darkOverlay} />}
     <LinearGradient
-      colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.8)', 'rgba(255,255,255,1)']}
+      colors={
+        isDark
+          ? ['rgba(0,0,0,0)', 'rgba(0,0,0,0.7)', 'rgba(0,0,0,0.95)']
+          : ['rgba(255,255,255,0)', 'rgba(255,255,255,0.8)', 'rgba(255,255,255,1)']
+      }
       locations={[0, 0.8, 1]}
       start={{ x: 0.5, y: 1 }}
       end={{ x: 0.5, y: 0 }}
@@ -32,6 +38,7 @@ const TennisCourtBackground = () => (
 
 export default function HomeScreen() {
   const { user, isLoading, signIn } = useAuth();
+  const { colorScheme } = useColorScheme();
   const [showSignUp, setShowSignUp] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
@@ -84,10 +91,12 @@ export default function HomeScreen() {
   if (user) {
     return (
       <ThemedView style={styles.container}>
-        <TennisCourtBackground />
+        <TennisCourtBackground isDark={colorScheme === 'dark'} />
         <ThemedView style={styles.centeredContainer}>
           <ThemedView style={styles.welcomeBlock}>
-            <ThemedText type="title" style={styles.welcomeTitle}>
+            <ThemedText
+              type="title"
+              style={(styles.welcomeTitle, { color: colorScheme === 'dark' ? '#fff' : '#000' })}>
               Welcome back,
             </ThemedText>
             <ThemedText type="title" style={styles.userName}>
@@ -125,8 +134,8 @@ export default function HomeScreen() {
   }
 
   return (
-    <ThemedView lightColor="transparent" style={styles.container}>
-      <TennisCourtBackground />
+    <ThemedView lightColor="white" darkColor="#000000" style={styles.container}>
+      <TennisCourtBackground isDark={colorScheme === 'dark'} />
       <ThemedView style={styles.contentContainer}>
         <ThemedView lightColor="transparent" style={styles.titleContainer}>
           <ThemedText type="title">Welcome to Courtly</ThemedText>
@@ -150,7 +159,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     position: 'relative',
-    backgroundColor: 'white',
   },
   contentContainer: {
     flex: 1,
@@ -199,7 +207,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: 'bold',
     fontSize: 28,
-    color: '#222',
   },
   userName: {
     textAlign: 'center',
@@ -232,6 +239,12 @@ const styles = StyleSheet.create({
   },
   tennisCourtGradient: {
     ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
+  darkOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)', // Dark tint over the image
     width: '100%',
     height: '100%',
   },

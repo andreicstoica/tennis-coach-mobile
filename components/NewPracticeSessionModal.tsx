@@ -1,3 +1,4 @@
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { authClient } from '@/lib/auth-client';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -25,6 +26,7 @@ export default function NewPracticeSessionModal({
   const [location, setLocation] = React.useState<Location.LocationObject | null>(null);
 
   const router = useRouter();
+  const colorScheme = useColorScheme();
 
   useEffect(() => {
     const getLocation = async () => {
@@ -241,17 +243,23 @@ export default function NewPracticeSessionModal({
           flex: 1,
           justifyContent: 'center',
           alignItems: 'center',
-          backgroundColor: 'rgba(0,0,0,0.3)',
+          backgroundColor: colorScheme.isDarkColorScheme
+            ? 'rgba(255,255,255,0.1)'
+            : 'rgba(0,0,0,0.3)',
         }}>
         <View
           style={{
-            backgroundColor: '#fff',
+            backgroundColor: colorScheme.isDarkColorScheme ? '#1a1a1a' : '#fff',
             padding: 24,
             borderRadius: 12,
             width: 320,
             maxWidth: '90%',
           }}>
-          <ThemedText type="subtitle" style={{ marginBottom: 12 }}>
+          <ThemedText
+            lightColor="#000000"
+            darkColor="#ffffff"
+            type="subtitle"
+            style={{ marginBottom: 12 }}>
             New Practice Session
           </ThemedText>
 
@@ -266,7 +274,10 @@ export default function NewPracticeSessionModal({
           />
 
           {error ? (
-            <ThemedText style={{ color: 'red', marginBottom: 12, fontSize: 14 }}>
+            <ThemedText
+              lightColor="#dc2626"
+              darkColor="#f87171"
+              style={{ marginBottom: 12, fontSize: 14 }}>
               {error}
             </ThemedText>
           ) : null}
@@ -284,7 +295,9 @@ export default function NewPracticeSessionModal({
             onPress={handleClose}
             style={{ marginTop: 8 }}
             disabled={loading}>
-            <ThemedText>Cancel</ThemedText>
+            <ThemedText lightColor="#000000" darkColor="#ffffff">
+              Cancel
+            </ThemedText>
           </Button>
         </View>
       </View>

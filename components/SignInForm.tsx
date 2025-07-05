@@ -140,7 +140,10 @@ export function SignInForm({ onSubmit, onSwitchToSignUp }: SignInFormProps) {
           autoCapitalize="none"
         />
         {errors.email && (
-          <ThemedText style={{ color: '#ef4444', marginTop: 4, fontSize: 13 }}>
+          <ThemedText
+            lightColor="#dc2626"
+            darkColor="#f87171"
+            style={{ marginTop: 4, fontSize: 13 }}>
             {errors.email}
           </ThemedText>
         )}
@@ -234,11 +237,7 @@ export function SignInForm({ onSubmit, onSwitchToSignUp }: SignInFormProps) {
             backgroundColor: colorScheme === 'dark' ? '#374151' : '#d1d5db',
           }}
         />
-        <ThemedText
-          style={{
-            marginHorizontal: 16,
-            color: colorScheme === 'dark' ? '#9ca3af' : '#6b7280',
-          }}>
+        <ThemedText lightColor="#6b7280" darkColor="#9ca3af" style={{ marginHorizontal: 16 }}>
           or
         </ThemedText>
         <View
@@ -269,34 +268,23 @@ export function SignInForm({ onSubmit, onSwitchToSignUp }: SignInFormProps) {
         }}
         activeOpacity={0.8}>
         <IconSymbol name="globe" size={20} color={colorScheme === 'dark' ? '#ffffff' : '#000000'} />
-        <ThemedText
-          style={{
-            color: colorScheme === 'dark' ? '#ffffff' : '#000000',
-            fontSize: 16,
-            fontWeight: '600',
-          }}>
-          Continue with Google
-        </ThemedText>
+        <ThemedText style={{ fontSize: 16, fontWeight: '600' }}>Continue with Google</ThemedText>
       </TouchableOpacity>
 
       {/* Switch to Sign Up */}
       <View style={{ alignItems: 'center', width: '100%', marginTop: 8 }}>
         <ThemedText
-          style={{
-            color: colorScheme === 'dark' ? '#9ca3af' : '#6b7280',
-            marginBottom: 8,
-            textAlign: 'center',
-          }}>
+          lightColor="#6b7280"
+          darkColor="#9ca3af"
+          style={{ marginBottom: 8, textAlign: 'center' }}>
           Don&apos;t have an account?
         </ThemedText>
         <TouchableOpacity onPress={onSwitchToSignUp}>
           <ThemedText
-            style={{
-              color: colorScheme === 'dark' ? '#3b82f6' : '#2563eb',
-              fontSize: 16,
-              fontWeight: '600',
-              textAlign: 'center',
-            }}>
+            type="link"
+            lightColor="#2563eb"
+            darkColor="#3b82f6"
+            style={{ fontSize: 16, fontWeight: '600', textAlign: 'center' }}>
             Sign Up
           </ThemedText>
         </TouchableOpacity>

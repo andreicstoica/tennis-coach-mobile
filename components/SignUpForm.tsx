@@ -158,7 +158,10 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
           autoCapitalize="words"
         />
         {errors.name && (
-          <ThemedText style={{ color: '#ef4444', marginTop: 4, fontSize: 13 }}>
+          <ThemedText
+            lightColor="#dc2626"
+            darkColor="#f87171"
+            style={{ marginTop: 4, fontSize: 13 }}>
             {errors.name}
           </ThemedText>
         )}
@@ -192,7 +195,10 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
           autoCapitalize="none"
         />
         {errors.email && (
-          <ThemedText style={{ color: '#ef4444', marginTop: 4, fontSize: 13 }}>
+          <ThemedText
+            lightColor="#dc2626"
+            darkColor="#f87171"
+            style={{ marginTop: 4, fontSize: 13 }}>
             {errors.email}
           </ThemedText>
         )}
@@ -229,7 +235,10 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
           secureTextEntry
         />
         {errors.password && (
-          <ThemedText style={{ color: '#ef4444', marginTop: 4, fontSize: 13 }}>
+          <ThemedText
+            lightColor="#dc2626"
+            darkColor="#f87171"
+            style={{ marginTop: 4, fontSize: 13 }}>
             {errors.password}
           </ThemedText>
         )}
@@ -266,7 +275,10 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
           secureTextEntry
         />
         {errors.confirmPassword && (
-          <ThemedText style={{ color: '#ef4444', marginTop: 4, fontSize: 13 }}>
+          <ThemedText
+            lightColor="#dc2626"
+            darkColor="#f87171"
+            style={{ marginTop: 4, fontSize: 13 }}>
             {errors.confirmPassword}
           </ThemedText>
         )}
@@ -325,29 +337,22 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
           width: '100%',
         }}>
         <IconSymbol size={20} name="globe" color={colorScheme === 'dark' ? '#ffffff' : '#000000'} />
-        <ThemedText
-          style={{
-            color: colorScheme === 'dark' ? '#ffffff' : '#000000',
-            fontSize: 16,
-            fontWeight: '600',
-          }}>
+        <ThemedText style={{ fontSize: 16, fontWeight: '600' }}>
           {isGoogleSigningUp ? 'Signing up with Google...' : 'Continue with Google'}
         </ThemedText>
       </TouchableOpacity>
 
       {/* Switch to Sign In */}
       <View style={{ alignItems: 'center', width: '100%' }}>
-        <ThemedText
-          style={{ color: colorScheme === 'dark' ? '#9ca3af' : '#6b7280', marginBottom: 8 }}>
+        <ThemedText lightColor="#6b7280" darkColor="#9ca3af" style={{ marginBottom: 8 }}>
           Already have an account?
         </ThemedText>
         <TouchableOpacity onPress={onSwitchToSignIn}>
           <ThemedText
-            style={{
-              color: colorScheme === 'dark' ? '#3b82f6' : '#2563eb',
-              fontSize: 16,
-              fontWeight: '600',
-            }}>
+            type="link"
+            lightColor="#2563eb"
+            darkColor="#3b82f6"
+            style={{ fontSize: 16, fontWeight: '600' }}>
             Sign In
           </ThemedText>
         </TouchableOpacity>

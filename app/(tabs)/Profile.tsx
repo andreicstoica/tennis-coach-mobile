@@ -1,5 +1,7 @@
 import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { Button } from '@/components/ui/button';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { authClient } from '@/lib/auth-client';
 import { useAuth } from '@/lib/auth-context';
 import { Image } from 'expo-image';
@@ -25,6 +27,7 @@ type CourtBadge = {
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const insets = useSafeAreaInsets();
+  const { colorScheme } = useColorScheme();
 
   // Court badges state
   const [courtBadges, setCourtBadges] = useState<CourtBadge[]>([]);
@@ -136,15 +139,29 @@ export default function ProfileScreen() {
     return (
       <Pressable
         key={badge.courtName}
-        style={styles.badgeCard}
         onPress={() => openBadgeModal(badge)}
         accessibilityRole="button"
         accessibilityLabel={`View details for ${formatCourtName(badge.courtName)} badge`}>
-        {badgeImage && <Image source={badgeImage} style={styles.badgeImage} contentFit="contain" />}
-        <ThemedText style={styles.courtName}>{formatCourtName(badge.courtName)}</ThemedText>
-        <ThemedText style={styles.visitCount}>
-          Played {badge.timesVisited} time{badge.timesVisited !== 1 ? 's' : ''}
-        </ThemedText>
+        <ThemedView
+          lightColor="#f8f9fa"
+          darkColor="#2a2a2a"
+          style={[
+            styles.badgeCard,
+            {
+              borderWidth: 1,
+              borderColor: colorScheme === 'dark' ? '#444444' : '#e9ecef',
+            },
+          ]}>
+          {badgeImage && (
+            <Image source={badgeImage} style={styles.badgeImage} contentFit="contain" />
+          )}
+          <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.courtName}>
+            {formatCourtName(badge.courtName)}
+          </ThemedText>
+          <ThemedText lightColor="#666666" darkColor="#999999" style={styles.visitCount}>
+            Played {badge.timesVisited} time{badge.timesVisited !== 1 ? 's' : ''}
+          </ThemedText>
+        </ThemedView>
       </Pressable>
     );
   };
@@ -153,13 +170,21 @@ export default function ProfileScreen() {
     if (badgesLoading) {
       return (
         <View style={styles.badgesSection}>
-          <ThemedText style={styles.badgesHeader}>Court Badges</ThemedText>
+          <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.badgesHeader}>
+            Court Badges
+          </ThemedText>
           <View style={styles.badgesGrid}>
             {[1, 2].map((i) => (
-              <View key={i} style={[styles.badgeCard, styles.loadingBadge]}>
+              <ThemedView
+                key={i}
+                lightColor="#f8f9fa"
+                darkColor="#2a2a2a"
+                style={[styles.badgeCard, styles.loadingBadge]}>
                 <View style={styles.loadingImage} />
-                <ThemedText style={styles.loadingText}>Loading...</ThemedText>
-              </View>
+                <ThemedText lightColor="#666666" darkColor="#999999" style={styles.loadingText}>
+                  Loading...
+                </ThemedText>
+              </ThemedView>
             ))}
           </View>
         </View>
@@ -169,8 +194,12 @@ export default function ProfileScreen() {
     if (badgesError) {
       return (
         <View style={styles.badgesSection}>
-          <ThemedText style={styles.badgesHeader}>Court Badges</ThemedText>
-          <ThemedText style={styles.errorText}>{badgesError}</ThemedText>
+          <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.badgesHeader}>
+            Court Badges
+          </ThemedText>
+          <ThemedText lightColor="#dc3545" darkColor="#f87171" style={styles.errorText}>
+            {badgesError}
+          </ThemedText>
         </View>
       );
     }
@@ -178,8 +207,10 @@ export default function ProfileScreen() {
     if (courtBadges.length === 0) {
       return (
         <View style={styles.badgesSection}>
-          <ThemedText style={styles.badgesHeader}>Court Badges</ThemedText>
-          <ThemedText style={styles.emptyText}>
+          <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.badgesHeader}>
+            Court Badges
+          </ThemedText>
+          <ThemedText lightColor="#666666" darkColor="#999999" style={styles.emptyText}>
             No court badges yet. Start practicing to collect badges!
           </ThemedText>
         </View>
@@ -188,101 +219,145 @@ export default function ProfileScreen() {
 
     return (
       <View style={styles.badgesSection}>
-        <ThemedText style={styles.badgesHeader}>Court Badges</ThemedText>
+        <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.badgesHeader}>
+          Court Badges
+        </ThemedText>
         <View style={styles.badgesGrid}>{courtBadges.map(renderBadgeCard)}</View>
       </View>
     );
   };
 
   return (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={[
-        styles.container,
-        { minHeight: '100%', paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 },
-      ]}
-      keyboardShouldPersistTaps="handled"
-      bounces={false}
-      showsVerticalScrollIndicator={false}>
-      <ThemedText style={styles.header} type="title">
-        Profile
-      </ThemedText>
-      <ThemedText style={styles.subheader}>View details about your profile here.</ThemedText>
-      <View style={styles.section}>
-        <ThemedText style={styles.label}>Username</ThemedText>
-        <ThemedText style={styles.value}>{username}</ThemedText>
-      </View>
-      <View style={styles.section}>
-        <ThemedText style={styles.label}>Email</ThemedText>
-        <ThemedText style={styles.value}>{email}</ThemedText>
-      </View>
-      <View style={styles.section}>
-        <ThemedText style={styles.label}>Member Since</ThemedText>
-        <ThemedText style={styles.value}>{memberSince}</ThemedText>
-      </View>
+    <ThemedView lightColor="#ffffff" darkColor="#000000" style={{ flex: 1 }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[
+          styles.container,
+          { minHeight: '100%', paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
+        showsVerticalScrollIndicator={false}>
+        <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.header} type="title">
+          Profile
+        </ThemedText>
+        <ThemedText lightColor="#888888" darkColor="#aaaaaa" style={styles.subheader}>
+          View details about your profile here.
+        </ThemedText>
+        <View style={styles.section}>
+          <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.label}>
+            Username
+          </ThemedText>
+          <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.value}>
+            {username}
+          </ThemedText>
+        </View>
+        <View style={styles.section}>
+          <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.label}>
+            Email
+          </ThemedText>
+          <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.value}>
+            {email}
+          </ThemedText>
+        </View>
+        <View style={styles.section}>
+          <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.label}>
+            Member Since
+          </ThemedText>
+          <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.value}>
+            {memberSince}
+          </ThemedText>
+        </View>
 
-      {/* Court Badges Section */}
-      {renderCourtBadges()}
+        {/* Court Badges Section */}
+        {renderCourtBadges()}
 
-      {/* Badge Modal */}
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="none"
-        onRequestClose={closeBadgeModal}>
-        <Pressable style={styles.modalOverlay} onPress={closeBadgeModal}>
-          <Animated.View
-            style={[
-              styles.modalContent,
-              {
-                opacity: modalAnim,
-                transform: [
-                  {
-                    scale: modalAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.92, 1],
-                    }),
-                  },
-                ],
-              },
-            ]}
-            onStartShouldSetResponder={() => true}
-            onTouchEnd={(e) => e.stopPropagation()}>
-            <Pressable
-              style={styles.closeButton}
-              onPress={closeBadgeModal}
-              accessibilityRole="button"
-              accessibilityLabel="Close badge details">
-              <ThemedText style={styles.closeButtonText}>×</ThemedText>
-            </Pressable>
-            {selectedBadge && (
-              <>
-                <Image
-                  source={getBadgeImage(selectedBadge.courtName)}
-                  style={styles.modalBadgeImage}
-                  contentFit="contain"
-                />
-                <ThemedText style={styles.modalCourtName}>
-                  {formatCourtName(selectedBadge.courtName)}
-                </ThemedText>
-                <ThemedText style={styles.modalVisitCount}>
-                  Played {selectedBadge.timesVisited} time
-                  {selectedBadge.timesVisited !== 1 ? 's' : ''}
-                </ThemedText>
-                <ThemedText style={styles.modalUnlockDate}>
-                  First unlocked: {new Date(selectedBadge.firstUnlockedAt).toLocaleDateString()}
-                </ThemedText>
-              </>
-            )}
-          </Animated.View>
-        </Pressable>
-      </Modal>
+        {/* Badge Modal */}
+        <Modal
+          visible={modalVisible}
+          transparent
+          animationType="none"
+          onRequestClose={closeBadgeModal}>
+          <Pressable style={styles.modalOverlay} onPress={closeBadgeModal}>
+            <Animated.View
+              style={[
+                styles.modalContent,
+                {
+                  opacity: modalAnim,
+                  transform: [
+                    {
+                      scale: modalAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.92, 1],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+              onStartShouldSetResponder={() => true}
+              onTouchEnd={(e) => e.stopPropagation()}>
+              <ThemedView
+                lightColor="#ffffff"
+                darkColor="#1a1a1a"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: 20,
+                  padding: 24,
+                  alignItems: 'center',
+                }}>
+                {/* All modal content goes here */}
+                <Pressable
+                  style={styles.closeButton}
+                  onPress={closeBadgeModal}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close badge details">
+                  <ThemedText
+                    lightColor="#888888"
+                    darkColor="#aaaaaa"
+                    style={styles.closeButtonText}>
+                    ×
+                  </ThemedText>
+                </Pressable>
+                {selectedBadge && (
+                  <>
+                    <Image
+                      source={getBadgeImage(selectedBadge.courtName)}
+                      style={styles.modalBadgeImage}
+                      contentFit="contain"
+                    />
+                    <ThemedText
+                      lightColor="#000000"
+                      darkColor="#ffffff"
+                      style={styles.modalCourtName}>
+                      {formatCourtName(selectedBadge.courtName)}
+                    </ThemedText>
+                    <ThemedText
+                      lightColor="#444444"
+                      darkColor="#cccccc"
+                      style={styles.modalVisitCount}>
+                      Played {selectedBadge.timesVisited} time
+                      {selectedBadge.timesVisited !== 1 ? 's' : ''}
+                    </ThemedText>
+                    <ThemedText
+                      lightColor="#888888"
+                      darkColor="#aaaaaa"
+                      style={styles.modalUnlockDate}>
+                      First unlocked: {new Date(selectedBadge.firstUnlockedAt).toLocaleDateString()}
+                    </ThemedText>
+                  </>
+                )}
+              </ThemedView>
+            </Animated.View>
+          </Pressable>
+        </Modal>
 
-      <View style={styles.spacer} />
-      <Button variant="destructive" size="lg" style={styles.signOutButton} onPress={signOut}>
-        <ThemedText style={styles.signOutText}>Sign Out</ThemedText>
-      </Button>
-    </ScrollView>
+        <View style={styles.spacer} />
+        <Button variant="destructive" size="lg" style={styles.signOutButton} onPress={signOut}>
+          <ThemedText style={styles.signOutText}>Sign Out</ThemedText>
+        </Button>
+      </ScrollView>
+    </ThemedView>
   );
 }
 
@@ -294,7 +369,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     flex: 1,
     paddingHorizontal: 24,
-    backgroundColor: '#fff',
     alignItems: 'flex-start',
     justifyContent: 'flex-start',
   },
@@ -304,7 +378,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   subheader: {
-    color: '#888',
     fontSize: 16,
     marginBottom: 24,
   },
@@ -341,10 +414,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32, // Increased from 24
     padding: 8, // Reduced from 12
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'transparent',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#e9ecef',
+    borderColor: 'transparent',
     elevation: 2,
   },
   badgeImage: {
@@ -360,7 +433,6 @@ const styles = StyleSheet.create({
   },
   visitCount: {
     fontSize: 13,
-    color: '#666',
     textAlign: 'center',
   },
   // Loading States
@@ -376,17 +448,14 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 13,
-    color: '#666',
   },
   // Error and Empty States
   errorText: {
-    color: '#dc3545',
     fontSize: 14,
     textAlign: 'center',
     padding: 16,
   },
   emptyText: {
-    color: '#666',
     fontSize: 14,
     textAlign: 'center',
     padding: 16,
@@ -400,7 +469,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent',
     borderRadius: 20,
     padding: 24,
     alignItems: 'center',
@@ -420,7 +489,6 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     fontSize: 28,
-    color: '#888',
     fontWeight: 'bold',
   },
   modalBadgeImage: {
@@ -436,13 +504,11 @@ const styles = StyleSheet.create({
   },
   modalVisitCount: {
     fontSize: 16,
-    color: '#444',
     marginBottom: 4,
     textAlign: 'center',
   },
   modalUnlockDate: {
     fontSize: 14,
-    color: '#888',
     textAlign: 'center',
   },
   spacer: {

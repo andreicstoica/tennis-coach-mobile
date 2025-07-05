@@ -6,7 +6,6 @@ import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { NAV_THEME } from '@/lib/constants';
 
 export default function TabLayout() {
   const { colorScheme } = useColorScheme();
@@ -14,8 +13,8 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: NAV_THEME[colorScheme ?? 'light'].primary,
-        tabBarInactiveTintColor: '#000',
+        tabBarActiveTintColor: '#00D2FF', // Bright cyan that works well in both modes
+        tabBarInactiveTintColor: colorScheme === 'dark' ? '#9ca3af' : '#6b7280', // Light grey for dark mode, darker grey for light mode
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
