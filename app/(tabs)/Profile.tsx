@@ -2,10 +2,12 @@ import Badge3D from '@/components/Badge3D';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Button } from '@/components/ui/button';
+import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { authClient } from '@/lib/auth-client';
 import { useAuth } from '@/lib/auth-context';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -17,7 +19,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type CourtBadge = {
   courtName: string;
@@ -29,6 +31,7 @@ export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
+  const bottomTabBarHeight = useBottomTabOverflow();
 
   // Court badges state
   const [courtBadges, setCourtBadges] = useState<CourtBadge[]>([]);
@@ -36,6 +39,7 @@ export default function ProfileScreen() {
   const [badgesError, setBadgesError] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedBadge, setSelectedBadge] = useState<CourtBadge | null>(null);
+  const [showBlur, setShowBlur] = useState(false);
   const modalAnim = useRef(new Animated.Value(0)).current;
 
   // Fallbacks in case user data is missing
@@ -230,132 +234,155 @@ export default function ProfileScreen() {
     );
   };
 
+  const handleScroll = (event: any) => {
+    const scrollY = event.nativeEvent.contentOffset.y;
+    const threshold = 50; // Show blur when scrolled more than 50px
+    setShowBlur(scrollY > threshold);
+  };
+
   return (
-    <ThemedView lightColor="#ffffff" darkColor="#000000" style={{ flex: 1 }}>
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={[
-          styles.container,
-          { flexGrow: 1, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 },
-        ]}
-        keyboardShouldPersistTaps="handled"
-        bounces={false}
-        showsVerticalScrollIndicator={false}>
-        <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.header} type="title">
-          Profile
-        </ThemedText>
-        <View style={styles.section}>
-          <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.label}>
-            Username
-          </ThemedText>
-          <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.value}>
-            {username}
-          </ThemedText>
-        </View>
-        <View style={styles.section}>
-          <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.label}>
-            Email
-          </ThemedText>
-          <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.value}>
-            {email}
-          </ThemedText>
-        </View>
-        <View style={styles.section}>
-          <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.label}>
-            Member Since
-          </ThemedText>
-          <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.value}>
-            {memberSince}
-          </ThemedText>
-        </View>
+    <>
+      {/* Progressive gradient overlay at top - only when scrolling */}
+      {showBlur && (
+        <LinearGradient
+          colors={
+            colorScheme === 'dark'
+              ? ['rgba(0, 0, 0, 0.95)', 'rgba(0, 0, 0, 0.7)', 'rgba(0, 0, 0, 0)']
+              : ['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.7)', 'rgba(255, 255, 255, 0)']
+          }
+          style={[styles.topBlurOverlay, { height: insets.top + 30 }]}
+        />
+      )}
 
-        {/* Court Badges Section */}
-        {renderCourtBadges()}
+      <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: insets.top + 16, paddingBottom: bottomTabBarHeight + insets.bottom + 32 },
+          ]}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+          showsVerticalScrollIndicator={false}>
+          <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.header} type="title">
+            Profile
+          </ThemedText>
+          <View style={styles.section}>
+            <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.label}>
+              Username
+            </ThemedText>
+            <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.value}>
+              {username}
+            </ThemedText>
+          </View>
+          <View style={styles.section}>
+            <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.label}>
+              Email
+            </ThemedText>
+            <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.value}>
+              {email}
+            </ThemedText>
+          </View>
+          <View style={styles.section}>
+            <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.label}>
+              Member Since
+            </ThemedText>
+            <ThemedText lightColor="#000000" darkColor="#ffffff" style={styles.value}>
+              {memberSince}
+            </ThemedText>
+          </View>
 
-        {/* Badge Modal */}
-        <Modal
-          visible={modalVisible}
-          transparent
-          animationType="none"
-          onRequestClose={closeBadgeModal}>
-          <Pressable style={styles.modalOverlay} onPress={closeBadgeModal}>
-            <Animated.View
-              style={[
-                styles.modalContent,
-                {
-                  opacity: modalAnim,
-                  transform: [
-                    {
-                      scale: modalAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0.92, 1],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-              onStartShouldSetResponder={() => true}
-              onTouchEnd={(e) => e.stopPropagation()}>
-              <ThemedView
-                lightColor="#ffffff"
-                darkColor="#1a1a1a"
-                style={{
-                  borderRadius: 20,
-                  padding: 24,
-                  alignItems: 'center',
-                  // Remove width: '100%' and height: '100%'
-                  // Let it size based on content
-                }}>
-                <Pressable
-                  style={styles.closeButton}
-                  onPress={closeBadgeModal}
-                  accessibilityRole="button"
-                  accessibilityLabel="Close badge details">
-                  <ThemedText
-                    lightColor="#888888"
-                    darkColor="#aaaaaa"
-                    style={styles.closeButtonText}>
-                    ×
-                  </ThemedText>
-                </Pressable>
-                {selectedBadge && (
-                  <>
-                    <Badge3D
-                      badgeImage={getBadgeImage(selectedBadge.courtName)}
-                      courtName={selectedBadge.courtName}
-                      isModal={true}
-                    />
-                    <ThemedText
-                      lightColor="#000000"
-                      darkColor="#ffffff"
-                      style={styles.modalCourtName}>
-                      {formatCourtName(selectedBadge.courtName)}
-                    </ThemedText>
-                    <ThemedText
-                      lightColor="#444444"
-                      darkColor="#cccccc"
-                      style={styles.modalVisitCount}>
-                      Played {selectedBadge.timesVisited} time
-                      {selectedBadge.timesVisited !== 1 ? 's' : ''}
-                    </ThemedText>
+          {/* Court Badges Section */}
+          {renderCourtBadges()}
+
+          {/* Badge Modal */}
+          <Modal
+            visible={modalVisible}
+            transparent
+            animationType="none"
+            onRequestClose={closeBadgeModal}>
+            <Pressable style={styles.modalOverlay} onPress={closeBadgeModal}>
+              <Animated.View
+                style={[
+                  styles.modalContent,
+                  {
+                    opacity: modalAnim,
+                    transform: [
+                      {
+                        scale: modalAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0.92, 1],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+                onStartShouldSetResponder={() => true}
+                onTouchEnd={(e) => e.stopPropagation()}>
+                <ThemedView
+                  lightColor="#ffffff"
+                  darkColor="#1a1a1a"
+                  style={{
+                    borderRadius: 20,
+                    padding: 24,
+                    alignItems: 'center',
+                    // Remove width: '100%' and height: '100%'
+                    // Let it size based on content
+                  }}>
+                  <Pressable
+                    style={styles.closeButton}
+                    onPress={closeBadgeModal}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close badge details">
                     <ThemedText
                       lightColor="#888888"
                       darkColor="#aaaaaa"
-                      style={styles.modalUnlockDate}>
-                      First unlocked: {new Date(selectedBadge.firstUnlockedAt).toLocaleDateString()}
+                      style={styles.closeButtonText}>
+                      ×
                     </ThemedText>
-                  </>
-                )}
-              </ThemedView>
-            </Animated.View>
-          </Pressable>
-        </Modal>
+                  </Pressable>
+                  {selectedBadge && (
+                    <>
+                      <Badge3D
+                        badgeImage={getBadgeImage(selectedBadge.courtName)}
+                        courtName={selectedBadge.courtName}
+                        isModal={true}
+                      />
+                      <ThemedText
+                        lightColor="#000000"
+                        darkColor="#ffffff"
+                        style={styles.modalCourtName}>
+                        {formatCourtName(selectedBadge.courtName)}
+                      </ThemedText>
+                      <ThemedText
+                        lightColor="#444444"
+                        darkColor="#cccccc"
+                        style={styles.modalVisitCount}>
+                        Played {selectedBadge.timesVisited} time
+                        {selectedBadge.timesVisited !== 1 ? 's' : ''}
+                      </ThemedText>
+                      <ThemedText
+                        lightColor="#888888"
+                        darkColor="#aaaaaa"
+                        style={styles.modalUnlockDate}>
+                        First unlocked:{' '}
+                        {new Date(selectedBadge.firstUnlockedAt).toLocaleDateString()}
+                      </ThemedText>
+                    </>
+                  )}
+                </ThemedView>
+              </Animated.View>
+            </Pressable>
+          </Modal>
 
-        <Button variant="destructive" size="lg" style={styles.signOutButton} onPress={signOut}>
-          <ThemedText style={styles.signOutText}>Sign Out</ThemedText>
-        </Button>
-      </ScrollView>
-    </ThemedView>
+          <Button variant="destructive" size="lg" style={styles.signOutButton} onPress={signOut}>
+            <ThemedText style={styles.signOutText}>Sign Out</ThemedText>
+          </Button>
+        </ScrollView>
+      </SafeAreaView>
+    </>
   );
 }
 
@@ -363,6 +390,23 @@ const { width } = Dimensions.get('window');
 const badgeSize = (width - 60) / 2; // Increased gap between cards (was 48)
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+    marginBottom: 48,
+  },
+  scrollContent: {
+    marginTop: 16,
+    paddingHorizontal: 24,
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+  },
+  topBlurOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+  },
   container: {
     flexGrow: 1,
     paddingHorizontal: 24,
