@@ -236,7 +236,7 @@ export default function ProfileScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={[
           styles.container,
-          { minHeight: '100%', paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 },
+          { flexGrow: 1, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 },
         ]}
         keyboardShouldPersistTaps="handled"
         bounces={false}
@@ -351,7 +351,6 @@ export default function ProfileScreen() {
           </Pressable>
         </Modal>
 
-        <View style={styles.spacer} />
         <Button variant="destructive" size="lg" style={styles.signOutButton} onPress={signOut}>
           <ThemedText style={styles.signOutText}>Sign Out</ThemedText>
         </Button>
@@ -366,7 +365,6 @@ const badgeSize = (width - 60) / 2; // Increased gap between cards (was 48)
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    flex: 1,
     paddingHorizontal: 24,
     alignItems: 'flex-start',
     justifyContent: 'flex-start',
