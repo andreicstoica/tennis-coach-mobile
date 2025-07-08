@@ -90,7 +90,7 @@ export default function HomeScreen() {
 
   if (user) {
     return (
-      <ThemedView style={styles.container}>
+      <ThemedView style={styles.container} lightColor="white" darkColor="#000000">
         <TennisCourtBackground isDark={colorScheme === 'dark'} />
         <ThemedView style={styles.centeredContainer}>
           <ThemedView style={styles.welcomeBlock}>
@@ -136,8 +136,8 @@ export default function HomeScreen() {
   return (
     <ThemedView lightColor="white" darkColor="#000000" style={styles.container}>
       <TennisCourtBackground isDark={colorScheme === 'dark'} />
-      <ThemedView style={styles.contentContainer}>
-        <ThemedView lightColor="transparent" style={styles.titleContainer}>
+      <ThemedView style={styles.contentContainer} lightColor="white" darkColor="#000000">
+        <ThemedView lightColor="white" style={styles.titleContainer} darkColor="#000000">
           <ThemedText type="title">Welcome to Courtly</ThemedText>
         </ThemedView>
         <ThemedView lightColor="transparent" style={styles.waveContainer}>

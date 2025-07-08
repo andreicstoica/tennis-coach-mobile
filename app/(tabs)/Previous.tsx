@@ -330,17 +330,20 @@ export default function PreviousScreen() {
                 <TouchableOpacity
                   style={[
                     styles.filterChip,
-                    !selectedYear && styles.filterChipActive,
                     {
-                      backgroundColor:
-                        colorScheme === 'dark' ? '#2a2a2a' : 'rgba(255, 255, 255, 0.7)',
+                      backgroundColor: !selectedYear
+                        ? '#007AFF'
+                        : colorScheme === 'dark'
+                          ? '#2a2a2a'
+                          : 'rgba(255, 255, 255, 0.7)',
+                      borderColor: !selectedYear ? '#007AFF' : 'rgba(0, 0, 0, 0.1)',
                     },
                   ]}
                   onPress={clearFilters}>
                   <ThemedText
-                    lightColor="#000000"
-                    darkColor="#ffffff"
-                    style={[styles.filterChipText, !selectedYear && styles.filterChipTextActive]}>
+                    lightColor={!selectedYear ? '#ffffff' : '#000000'}
+                    darkColor={!selectedYear ? '#ffffff' : '#ffffff'}
+                    style={styles.filterChipText}>
                     All
                   </ThemedText>
                 </TouchableOpacity>
@@ -349,20 +352,21 @@ export default function PreviousScreen() {
                     key={year}
                     style={[
                       styles.filterChip,
-                      selectedYear === year && styles.filterChipActive,
                       {
                         backgroundColor:
-                          colorScheme === 'dark' ? '#2a2a2a' : 'rgba(255, 255, 255, 0.7)',
+                          selectedYear === year
+                            ? '#007AFF'
+                            : colorScheme === 'dark'
+                              ? '#2a2a2a'
+                              : 'rgba(255, 255, 255, 0.7)',
+                        borderColor: selectedYear === year ? '#007AFF' : 'rgba(0, 0, 0, 0.1)',
                       },
                     ]}
                     onPress={() => handleYearPress(year)}>
                     <ThemedText
-                      lightColor="#000000"
-                      darkColor="#ffffff"
-                      style={[
-                        styles.filterChipText,
-                        selectedYear === year && styles.filterChipTextActive,
-                      ]}>
+                      lightColor={selectedYear === year ? '#ffffff' : '#000000'}
+                      darkColor={selectedYear === year ? '#ffffff' : '#ffffff'}
+                      style={styles.filterChipText}>
                       {year}
                     </ThemedText>
                   </TouchableOpacity>
@@ -384,17 +388,20 @@ export default function PreviousScreen() {
                 <TouchableOpacity
                   style={[
                     styles.filterChip,
-                    !selectedMonth && styles.filterChipActive,
                     {
-                      backgroundColor:
-                        colorScheme === 'dark' ? '#2a2a2a' : 'rgba(255, 255, 255, 0.7)',
+                      backgroundColor: !selectedMonth
+                        ? '#007AFF'
+                        : colorScheme === 'dark'
+                          ? '#2a2a2a'
+                          : 'rgba(255, 255, 255, 0.7)',
+                      borderColor: !selectedMonth ? '#007AFF' : 'rgba(0, 0, 0, 0.1)',
                     },
                   ]}
                   onPress={() => setSelectedMonth(null)}>
                   <ThemedText
-                    lightColor="#000000"
-                    darkColor="#ffffff"
-                    style={[styles.filterChipText, !selectedMonth && styles.filterChipTextActive]}>
+                    lightColor={!selectedMonth ? '#ffffff' : '#000000'}
+                    darkColor={!selectedMonth ? '#ffffff' : '#ffffff'}
+                    style={styles.filterChipText}>
                     All
                   </ThemedText>
                 </TouchableOpacity>
@@ -403,20 +410,21 @@ export default function PreviousScreen() {
                     key={month}
                     style={[
                       styles.filterChip,
-                      selectedMonth === month && styles.filterChipActive,
                       {
                         backgroundColor:
-                          colorScheme === 'dark' ? '#2a2a2a' : 'rgba(255, 255, 255, 0.7)',
+                          selectedMonth === month
+                            ? '#007AFF'
+                            : colorScheme === 'dark'
+                              ? '#2a2a2a'
+                              : 'rgba(255, 255, 255, 0.7)',
+                        borderColor: selectedMonth === month ? '#007AFF' : 'rgba(0, 0, 0, 0.1)',
                       },
                     ]}
                     onPress={() => handleMonthPress(month)}>
                     <ThemedText
-                      lightColor="#000000"
-                      darkColor="#ffffff"
-                      style={[
-                        styles.filterChipText,
-                        selectedMonth === month && styles.filterChipTextActive,
-                      ]}>
+                      lightColor={selectedMonth === month ? '#ffffff' : '#000000'}
+                      darkColor={selectedMonth === month ? '#ffffff' : '#ffffff'}
+                      style={styles.filterChipText}>
                       {new Date(2024, month - 1).toLocaleDateString('en-US', { month: 'short' })}
                     </ThemedText>
                   </TouchableOpacity>
