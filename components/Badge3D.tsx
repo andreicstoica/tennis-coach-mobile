@@ -38,7 +38,12 @@ export default function Badge3D({ badgeImage, courtName, onPress, isModal = fals
     },
     onPanResponderRelease: (evt, gestureState) => {
       const velocity = gestureState.vx * 0.1;
-      const finalRotation = spinValue._value + velocity * 100;
+      let currentValue = 0;
+      spinValue.addListener(({ value }) => {
+        currentValue = value;
+      });
+      const finalRotation = currentValue + velocity * 100;
+      spinValue.removeAllListeners();
 
       Animated.spring(spinValue, {
         toValue: finalRotation,
