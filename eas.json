@@ -17,6 +17,7 @@
     "ios": {
       "developmentClient": false,
       "distribution": "internal",
+      "cocoapods": "1.15.2",
       "env": {
         "EXPO_USE_UNIMODULES": "1"
       }
