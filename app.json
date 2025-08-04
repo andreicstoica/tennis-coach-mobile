@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.andreistoica.tenniscoachmobile",
+      "cocoapods": "1.15.2",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
