@@ -13,6 +13,13 @@
     },
     "production": {
       "autoIncrement": true
+    },
+    "ios": {
+      "developmentClient": false,
+      "distribution": "internal",
+      "env": {
+        "EXPO_USE_UNIMODULES": "1"
+      }
     }
   },
   "submit": {
