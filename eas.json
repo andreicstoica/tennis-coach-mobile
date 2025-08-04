@@ -6,16 +6,13 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "cocoapods": "1.15.2"
+      "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal",
-      "cocoapods": "1.15.2"
+      "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true,
-      "cocoapods": "1.15.2"
+      "autoIncrement": true
     },
     "ios": {
       "developmentClient": false,

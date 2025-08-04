@@ -1,4 +1,129 @@
 import { Asset } from 'expo-asset';
+import React, { useEffect, useState } from 'react';
+import { Animated, Image, PanResponder, View } from 'react-native';
+
+interface Badge3DProps {
+  badgeImage: any;
+  courtName: string;
+  onPress?: () => void;
+  isModal?: boolean;
+}
+
+export default function Badge3D({ badgeImage, courtName, onPress, isModal = false }: Badge3DProps) {
+  const [imageUri, setImageUri] = useState<string | null>(null);
+  const spinValue = new Animated.Value(0);
+  const scaleValue = new Animated.Value(1);
+  const translateY = new Animated.Value(0);
+
+  useEffect(() => {
+    loadImage();
+  }, [badgeImage]);
+
+  const loadImage = async () => {
+    const [{ localUri }] = await Asset.loadAsync(badgeImage);
+    setImageUri(localUri!);
+  };
+
+  const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      return Math.abs(gestureState.dx) > 2;
+    },
+    onPanResponderGrant: () => {
+      spinValue.setValue(0);
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      const rotation = gestureState.dx * 0.5;
+      spinValue.setValue(rotation);
+    },
+    onPanResponderRelease: (evt, gestureState) => {
+      const velocity = gestureState.vx * 0.1;
+      const finalRotation = spinValue._value + velocity * 100;
+
+      Animated.spring(spinValue, {
+        toValue: finalRotation,
+        useNativeDriver: true,
+        tension: 50,
+        friction: 7,
+      }).start();
+    },
+  });
+
+  useEffect(() => {
+    if (isModal) {
+      // Breathing animation for modal
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(scaleValue, {
+            toValue: 1.05,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scaleValue, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+
+      // Floating animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(translateY, {
+            toValue: -10,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(translateY, {
+            toValue: 0,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }
+  }, [isModal]);
+
+  if (!imageUri) {
+    return <View style={{ width: 200, height: 200, backgroundColor: '#f0f0f0' }} />;
+  }
+
+  return (
+    <View style={{ width: 200, height: 200 }} {...panResponder.panHandlers}>
+      <Animated.View
+        style={{
+          flex: 1,
+          transform: [
+            {
+              rotate: spinValue.interpolate({
+                inputRange: [-360, 360],
+                outputRange: ['-360deg', '360deg'],
+              }),
+            },
+            { scale: scaleValue },
+            { translateY },
+          ],
+        }}>
+        <Image
+          source={{ uri: imageUri }}
+          style={{
+            width: '100%',
+            height: '100%',
+            borderRadius: 100,
+          }}
+          resizeMode="cover"
+        />
+      </Animated.View>
+    </View>
+  );
+}
+
+/*
+// ORIGINAL 3D IMPLEMENTATION - UNCOMMENT WHEN SWITCHING TO BARE WORKFLOW
+// Requires: expo-three, expo-gl, expo-gl-cpp, three
+
+import { Asset } from 'expo-asset';
 import { ExpoWebGLRenderingContext, GLView } from 'expo-gl';
 import { Renderer, TextureLoader } from 'expo-three';
 import React, { useEffect, useRef, useState } from 'react';
@@ -13,52 +138,37 @@ interface Badge3DProps {
 }
 
 export default function Badge3D({ badgeImage, courtName, onPress, isModal = false }: Badge3DProps) {
-  /* ------------------------------------------------------------------ */
-  /*  State / refs                                                      */
-  /* ------------------------------------------------------------------ */
+  // State / refs
   const [gl, setGL] = useState<ExpoWebGLRenderingContext | null>(null);
   const [scene, setScene] = useState<THREE.Scene | null>(null);
   const [camera, setCamera] = useState<THREE.PerspectiveCamera | null>(null);
   const [renderer, setRenderer] = useState<Renderer | null>(null);
   const [medal, setMedal] = useState<THREE.Group | null>(null);
 
-
   const autoRotation = useRef(0);
   const isInteracting = useRef(false);
   const spinVelocity = useRef(0);
   const medalRotation = useRef(0);
 
-  /* ------------------------------------------------------------------ */
-  /*  Touch / mouse handler                                             */
-  /* ------------------------------------------------------------------ */
+  // Touch / mouse handler
   const panResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: (evt, gestureState) => {
-      // More lenient - respond to any horizontal movement
       return Math.abs(gestureState.dx) > 2;
     },
     onPanResponderGrant: (evt) => {
       isInteracting.current = true;
-      // Reset any existing momentum
       spinVelocity.current = 0;
     },
     onPanResponderMove: (evt, gestureState) => {
-      // Reduced sensitivity for gentler spinning
-      const sensitivity = 0.02; // Reduced from 0.05
+      const sensitivity = 0.02;
       spinVelocity.current = gestureState.vx * sensitivity;
-
-      // Much more gentle immediate movement feedback
-      medalRotation.current += gestureState.dx * 0.0055; // Reduced from 0.02
+      medalRotation.current += gestureState.dx * 0.0055;
     },
     onPanResponderRelease: (evt, gestureState) => {
-      // Start momentum-based spinning
       isInteracting.current = false;
-
-      // Reduced max velocity for gentler momentum
-      const maxVelocity = 0.2; // Reduced from 0.5
-      spinVelocity.current = Math.max(-maxVelocity, Math.min(maxVelocity, gestureState.vx * 0.005)); // Reduced multiplier
-
-      console.log('Released with velocity:', spinVelocity.current);
+      const maxVelocity = 0.2;
+      spinVelocity.current = Math.max(-maxVelocity, Math.min(maxVelocity, gestureState.vx * 0.005));
     },
     onPanResponderTerminate: () => {
       isInteracting.current = false;
@@ -66,16 +176,12 @@ export default function Badge3D({ badgeImage, courtName, onPress, isModal = fals
     },
   });
 
-  /* ------------------------------------------------------------------ */
-  /*  GL context setup                                                  */
-  /* ------------------------------------------------------------------ */
+  // GL context setup
   const onContextCreate = async (glCtx: ExpoWebGLRenderingContext) => {
-    /* renderer */
     const renderer = new Renderer({ gl: glCtx });
     renderer.setSize(glCtx.drawingBufferWidth, glCtx.drawingBufferHeight);
     renderer.setClearColor(0x000000, 0);
 
-    /* scene & camera */
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
       50,
@@ -85,21 +191,19 @@ export default function Badge3D({ badgeImage, courtName, onPress, isModal = fals
     );
     camera.position.z = 4;
 
-    /* medal geometry -------------------------------------------------- */
+    // Medal geometry
     const medalGeo = new THREE.CylinderGeometry(1.3, 1.3, 0.15, 32);
-
     const edgeMat = new THREE.MeshBasicMaterial({ color: 0xb8860b });
     const backMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
-    const frontMat = new THREE.MeshBasicMaterial({ color: 0xffffff }); // texture later
+    const frontMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
-    /* IMPORTANT: index 2 = “bottom” cap = faces the camera after X-rotation */
     const medalMesh = new THREE.Mesh(medalGeo, [edgeMat, backMat, frontMat]);
-    medalMesh.rotation.x = -Math.PI / 2; // lay the coin flat
+    medalMesh.rotation.x = -Math.PI / 2;
 
     const medalGroup = new THREE.Group();
     medalGroup.add(medalMesh);
 
-    /* rim */
+    // Rim
     const rimGeo = new THREE.TorusGeometry(1.3, 0.04, 8, 24);
     const rimMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
     const rim = new THREE.Mesh(rimGeo, rimMat);
@@ -108,38 +212,32 @@ export default function Badge3D({ badgeImage, courtName, onPress, isModal = fals
 
     scene.add(medalGroup);
 
-    /* lighting */
+    // Lighting
     scene.add(new THREE.AmbientLight(0x404040, 0.3));
     const dir = new THREE.DirectionalLight(0xffffff, 0.2);
     dir.position.set(2, 2, 2);
     scene.add(dir);
 
-    /* save objects in state */
     setGL(glCtx);
     setScene(scene);
     setCamera(camera);
     setRenderer(renderer);
     setMedal(medalGroup);
 
-    /* load badge texture onto the frontMat */
     await loadTexture(badgeImage, frontMat);
   };
 
-  /* ------------------------------------------------------------------ */
-  /*  Texture loader                                                    */
-  /* ------------------------------------------------------------------ */
+  // Texture loader
   const loadTexture = async (badgeImg: any, mat: THREE.MeshBasicMaterial) => {
     const [{ localUri }] = await Asset.loadAsync(badgeImg);
     const tex = new TextureLoader().load(localUri!);
 
-    tex.center.set(0.5, 0.5); // rotate around center
-    tex.rotation = Math.PI / 2; // 90°
-
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping; // allow mirroring on U
-    tex.repeat.set(-1, 1); // mirror once on U
-    tex.offset.set(0, 0); // shift mirror back into view
-
-    tex.flipY = false; // Expo/React-Native images are already right-side-up
+    tex.center.set(0.5, 0.5);
+    tex.rotation = Math.PI / 2;
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(-1, 1);
+    tex.offset.set(0, 0);
+    tex.flipY = false;
     tex.minFilter = THREE.LinearFilter;
     tex.magFilter = THREE.LinearFilter;
 
@@ -147,9 +245,7 @@ export default function Badge3D({ badgeImage, courtName, onPress, isModal = fals
     mat.needsUpdate = true;
   };
 
-  /* ------------------------------------------------------------------ */
-  /*  Animation loop                                                    */
-  /* ------------------------------------------------------------------ */
+  // Animation loop
   useEffect(() => {
     if (!gl || !scene || !camera || !renderer || !medal) return;
 
@@ -159,7 +255,6 @@ export default function Badge3D({ badgeImage, courtName, onPress, isModal = fals
     const frameInterval = 1000 / targetFPS;
 
     const animate = (currentTime: number) => {
-      // Throttle to target FPS
       if (currentTime - lastTime < frameInterval) {
         animationId = requestAnimationFrame(animate);
         return;
@@ -167,25 +262,16 @@ export default function Badge3D({ badgeImage, courtName, onPress, isModal = fals
       lastTime = currentTime;
 
       if (!isInteracting.current) {
-        // Apply momentum spinning
         if (Math.abs(spinVelocity.current) > 0.001) {
-          // Spin with momentum
           medalRotation.current += spinVelocity.current;
           medal.rotation.y = medalRotation.current;
-
-          // Apply friction to slow down
-          spinVelocity.current *= 0.99; // More friction for quicker stops
-
-          // Small wobble during momentum spin
+          spinVelocity.current *= 0.99;
           medal.rotation.z = Math.sin(medalRotation.current * 3) * 0.02;
         } else {
-          // Return to auto-rotation when momentum is very low
           spinVelocity.current = 0;
           autoRotation.current += 0.005;
-
-          // Smoothly transition back to auto-rotation
           const targetRotation = autoRotation.current;
-          medalRotation.current += (targetRotation - medalRotation.current) * 0.05; // Faster transition
+          medalRotation.current += (targetRotation - medalRotation.current) * 0.05;
           medal.rotation.y = medalRotation.current;
           medal.rotation.z = Math.sin(autoRotation.current * 0.3) * 0.05;
         }
@@ -196,9 +282,8 @@ export default function Badge3D({ badgeImage, courtName, onPress, isModal = fals
           medal.scale.setScalar(breathingScale);
         }
       } else {
-        // During interaction, show immediate response
         medal.rotation.y = medalRotation.current;
-        medal.rotation.z = 0; // Keep stable while interacting
+        medal.rotation.z = 0;
       }
 
       renderer.render(scene, camera);
@@ -215,12 +300,10 @@ export default function Badge3D({ badgeImage, courtName, onPress, isModal = fals
     };
   }, [gl, scene, camera, renderer, medal, isModal]);
 
-  /* ------------------------------------------------------------------ */
-  /*  JSX                                                               */
-  /* ------------------------------------------------------------------ */
   return (
     <View style={{ width: 200, height: 200 }} {...panResponder.panHandlers}>
       <GLView style={{ flex: 1 }} onContextCreate={onContextCreate} />
     </View>
   );
 }
+*/
