@@ -22,8 +22,7 @@ export default function Badge3D({ badgeImage, courtName, onPress, isModal = fals
   const [renderer, setRenderer] = useState<Renderer | null>(null);
   const [medal, setMedal] = useState<THREE.Group | null>(null);
 
-  const mouseX = useRef(0);
-  const mouseY = useRef(0);
+
   const autoRotation = useRef(0);
   const isInteracting = useRef(false);
   const spinVelocity = useRef(0);
