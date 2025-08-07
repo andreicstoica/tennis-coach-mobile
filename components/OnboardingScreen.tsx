@@ -1,4 +1,5 @@
 import { useColorScheme } from '@/hooks/useColorScheme';
+import * as Haptics from 'expo-haptics';
 import React from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
 import { ThemedText } from './ThemedText';
@@ -40,6 +41,21 @@ export function OnboardingScreen({
 }: OnboardingScreenProps) {
   const { colorScheme } = useColorScheme();
 
+  const handleButtonPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onButtonPress();
+  };
+
+  const handleSkipPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onSkip?.();
+  };
+
+  const handleBackPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onBack?.();
+  };
+
   return (
     <ThemedView lightColor="#ffffff" darkColor="#000000" style={styles.container}>
       {/* Header with Progress Indicators */}
@@ -72,7 +88,7 @@ export function OnboardingScreen({
 
         {/* Back button below progress indicators */}
         {showBack && onBack && (
-          <Button variant="ghost" onPress={onBack} style={styles.backButton}>
+          <Button variant="ghost" onPress={handleBackPress} style={styles.backButton}>
             <ThemedText lightColor="#000000" darkColor="#ffffff">
               ← Back
             </ThemedText>
@@ -112,14 +128,14 @@ export function OnboardingScreen({
       {/* Footer */}
       <View style={styles.footer}>
         {!hideMainButton && (
-          <Button onPress={onButtonPress} style={styles.button} className="w-full">
+          <Button onPress={handleButtonPress} style={styles.button} className="w-full">
             <ThemedText lightColor="#ffffff" darkColor="#ffffff" style={styles.buttonText}>
               {buttonText}
             </ThemedText>
           </Button>
         )}
         {showSkip && onSkip && (
-          <Button variant="ghost" onPress={onSkip} style={styles.skipButton}>
+          <Button variant="ghost" onPress={handleSkipPress} style={styles.skipButton}>
             <ThemedText lightColor="#9ca3af" darkColor="#6b7280" style={styles.skipButtonText}>
               Skip
             </ThemedText>

@@ -12,13 +12,11 @@
       "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true
-    },
-    "ios": {
-      "developmentClient": false,
-      "distribution": "internal",
-      "env": {
-        "EXPO_USE_UNIMODULES": "1"
+      "autoIncrement": true,
+      "ios": {
+        "cache": {
+          "disabled": true
+        }
       }
     }
   },

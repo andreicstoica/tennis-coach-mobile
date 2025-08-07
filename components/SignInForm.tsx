@@ -1,5 +1,6 @@
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { authClient } from '@/lib/auth-client';
+import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import { TextInput, TouchableOpacity, View } from 'react-native';
 import { z } from 'zod';
@@ -31,6 +32,7 @@ export function SignInForm({ onSubmit, onSwitchToSignUp }: SignInFormProps) {
     const result = signInSchema.safeParse({ email, password });
 
     if (!result.success) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       // map Zod errors to field errors
       const fieldErrors: { email?: string; password?: string } = {};
       result.error.errors.forEach((err) => {
@@ -49,6 +51,7 @@ export function SignInForm({ onSubmit, onSwitchToSignUp }: SignInFormProps) {
       // let the parent component handle authentication via auth context
       await onSubmit(email, password);
     } catch (error) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       console.error('Sign in error:', error);
       setErrors({ email: 'Invalid email or password. Please try again.' });
     } finally {
@@ -57,6 +60,7 @@ export function SignInForm({ onSubmit, onSwitchToSignUp }: SignInFormProps) {
   };
 
   const handleGoogleSignIn = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
       setIsSigningIn(true);
       console.log('Google sign-in: Starting...');
@@ -70,6 +74,7 @@ export function SignInForm({ onSubmit, onSwitchToSignUp }: SignInFormProps) {
       // The auth context will detect the signed-in user when the user returns
       console.log('Google sign-in: Redirect initiated');
     } catch (error) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       console.error('Google sign-in error:', error);
       setErrors({ email: 'Google sign-in failed. Please try again.' });
     } finally {
@@ -81,6 +86,11 @@ export function SignInForm({ onSubmit, onSwitchToSignUp }: SignInFormProps) {
     if (errors[field as keyof typeof errors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
+  };
+
+  const handleSwitchToSignUp = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onSwitchToSignUp();
   };
 
   return (
@@ -297,7 +307,7 @@ export function SignInForm({ onSubmit, onSwitchToSignUp }: SignInFormProps) {
           style={{ marginBottom: 8, textAlign: 'center' }}>
           Don&apos;t have an account?
         </ThemedText>
-        <TouchableOpacity onPress={onSwitchToSignUp}>
+        <TouchableOpacity onPress={handleSwitchToSignUp}>
           <ThemedText
             type="link"
             lightColor="#2563eb"

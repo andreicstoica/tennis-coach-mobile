@@ -1,3 +1,4 @@
+import { SwipeablePracticeCards } from '@/components/SwipeablePracticeCards';
 import { ThemedText } from '~/components/ThemedText';
 import { ThemedView } from '~/components/ThemedView';
 import { useColorScheme } from '~/hooks/useColorScheme';
@@ -127,7 +128,6 @@ const MarkdownText = ({
       return (
         <Text key={lineIndex} style={[style, { lineHeight: 20 }]}>
           {' '}
-          {/* Reduced line height */}
           {lineSegments.map((segment, segmentIndex) => {
             if (segment.startsWith('<BOLD>')) {
               return (
@@ -441,13 +441,7 @@ const MessageContent = ({
     message.content.length > 50; // Content length check instead of line count
 
   if (isPracticePlan) {
-    return (
-      <PracticePlanAccordion
-        content={message.content}
-        textStyle={textStyle}
-        colorScheme={colorScheme}
-      />
-    );
+    return <SwipeablePracticeCards content={message.content} />;
   }
 
   // For other assistant messages, use markdown
@@ -485,7 +479,7 @@ export default function PracticeSession() {
   const [aiTriggered, setAiTriggered] = useState(false);
   const [waitingForAI, setWaitingForAI] = useState(false);
   const [currentThinkingIndex, setCurrentThinkingIndex] = useState(0);
-  const [aiTimeoutId, setAiTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  const [aiTimeoutId, setAiTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null);
 
   // Get the chatId from the route parameters
   // make sure it's a string that is ready to send to the server
@@ -978,7 +972,7 @@ const styles = StyleSheet.create({
   },
   messageContent: {
     fontSize: 16,
-    lineHeight: 20, // Reduced from 22
+    lineHeight: 20,
   },
   messageTime: {
     fontSize: 11,
@@ -1005,7 +999,6 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   accordionSection: {
-    marginBottom: 4,
     borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',

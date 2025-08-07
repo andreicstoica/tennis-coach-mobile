@@ -5,6 +5,8 @@ export const auth = betterAuth({
     trustedOrigins: [
         "tenniscoachmobile://",
         "tenniscoachmobile://*",
+        "courtly://",
+        "courtly://*",
         "http://localhost:8081",
     ],
     plugins: [expo()],

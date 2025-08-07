@@ -1,5 +1,15 @@
+import * as Haptics from 'expo-haptics';
 import React, { useEffect, useState } from 'react';
-import { Dimensions, StyleSheet, View } from 'react-native';
+import {
+  Dimensions,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TouchableWithoutFeedback,
+  View,
+} from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
@@ -16,7 +26,6 @@ import {
 } from './onboarding';
 import { SignInForm } from './SignInForm';
 import { SignUpForm } from './SignUpForm';
-import { ThemedView } from './ThemedView';
 
 type OnboardingStep =
   | 'welcome'
@@ -49,6 +58,7 @@ export function OnboardingFlow({ onComplete, onSignIn, onSignUp }: OnboardingFlo
   const isSwipeableStep = currentStepIndex !== -1;
 
   const goToNext = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     switch (currentStep) {
       case 'welcome':
         setCurrentStep('what-courtly-does');
@@ -75,6 +85,7 @@ export function OnboardingFlow({ onComplete, onSignIn, onSignUp }: OnboardingFlo
   };
 
   const goToPrevious = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     switch (currentStep) {
       case 'what-courtly-does':
         setCurrentStep('welcome');
@@ -95,65 +106,92 @@ export function OnboardingFlow({ onComplete, onSignIn, onSignUp }: OnboardingFlo
   };
 
   const handleSignUp = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setCurrentStep('sign-up');
   };
 
   const handleSignIn = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setCurrentStep('sign-in');
   };
 
   const handleSignUpComplete = async (name: string, email: string, password: string) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     await onSignUp(name, email, password);
     setCurrentStep('final-welcome');
   };
 
   const handleSignInComplete = async (email: string, password: string) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     await onSignIn(email, password);
     setCurrentStep('final-welcome');
   };
 
   const handleSkipToAccountSetup = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setCurrentStep('account-setup');
   };
 
+  const triggerHaptic = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
   const panGesture = Gesture.Pan()
+    .minDistance(50) // Require minimum distance before gesture starts
+    .minVelocity(100) // Require minimum velocity
     .onUpdate((event) => {
       if (!isSwipeableStep) return;
 
       // Calculate the base position for current step
       const basePosition = -currentStepIndex * screenWidth;
 
-      // Add the gesture translation
-      translateX.value = basePosition + event.translationX;
+      // Calculate the new position with gesture translation
+      let newPosition = basePosition + event.translationX;
+
+      // Prevent rightward movement when at the first step
+      if (currentStepIndex === 0 && event.translationX > 0) {
+        newPosition = basePosition; // Stay at current position
+      }
+
+      // Constrain the position to valid boundaries
+      const minPosition = -(swipeableSteps.length - 1) * screenWidth; // Last step position
+      const maxPosition = 0; // First step position
+
+      // Only allow movement within valid bounds
+      translateX.value = Math.max(minPosition, Math.min(maxPosition, newPosition));
     })
     .onEnd((event) => {
       if (!isSwipeableStep) return;
 
-      const threshold = screenWidth * 0.2; // 20% of screen width
+      const threshold = screenWidth * 0.35; // Increased from 0.2 to 0.35 (35% of screen width)
       const velocity = event.velocityX;
 
       // Determine if we should change steps
       let targetStep = currentStepIndex;
 
-      if (event.translationX > threshold || velocity > 500) {
+      if (event.translationX > threshold || velocity > 800) {
+        // Increased velocity threshold from 500 to 800
         // Swipe right - go to previous step
         if (currentStepIndex > 0) {
           targetStep = currentStepIndex - 1;
+          runOnJS(triggerHaptic)();
           runOnJS(goToPrevious)();
         }
-      } else if (event.translationX < -threshold || velocity < -500) {
+      } else if (event.translationX < -threshold || velocity < -800) {
+        // Increased velocity threshold from -500 to -800
         // Swipe left - go to next step
         if (currentStepIndex < swipeableSteps.length - 1) {
           targetStep = currentStepIndex + 1;
+          runOnJS(triggerHaptic)();
           runOnJS(goToNext)();
         }
       }
 
-      // Animate to target position
+      // Animate to target position with less bouncy spring
       const targetPosition = -targetStep * screenWidth;
       translateX.value = withSpring(targetPosition, {
-        damping: 20,
-        stiffness: 200,
+        damping: 35, // Increased from 20 to 35 for less bounce
+        stiffness: 300, // Increased from 200 to 300 for snappier animation
       });
     });
 
@@ -168,8 +206,8 @@ export function OnboardingFlow({ onComplete, onSignIn, onSignUp }: OnboardingFlo
     if (isSwipeableStep) {
       const targetPosition = -currentStepIndex * screenWidth;
       translateX.value = withSpring(targetPosition, {
-        damping: 20,
-        stiffness: 200,
+        damping: 35, // Increased from 20 to 35 for less bounce
+        stiffness: 300, // Increased from 200 to 300 for snappier animation
       });
     }
   }, [currentStep, isSwipeableStep]);
@@ -215,21 +253,45 @@ export function OnboardingFlow({ onComplete, onSignIn, onSignUp }: OnboardingFlo
         );
       case 'sign-up':
         return (
-          <ThemedView style={styles.formContainer}>
-            <SignUpForm
-              onSubmit={handleSignUpComplete}
-              onSwitchToSignIn={() => setCurrentStep('sign-in')}
-            />
-          </ThemedView>
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
+            <ScrollView
+              contentContainerStyle={styles.formContainer}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}>
+              <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <View style={{ flex: 1, justifyContent: 'center' }}>
+                  <SignUpForm
+                    onSubmit={handleSignUpComplete}
+                    onSwitchToSignIn={() => setCurrentStep('sign-in')}
+                  />
+                </View>
+              </TouchableWithoutFeedback>
+            </ScrollView>
+          </KeyboardAvoidingView>
         );
       case 'sign-in':
         return (
-          <ThemedView style={styles.formContainer}>
-            <SignInForm
-              onSubmit={handleSignInComplete}
-              onSwitchToSignUp={() => setCurrentStep('sign-up')}
-            />
-          </ThemedView>
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
+            <ScrollView
+              contentContainerStyle={styles.formContainer}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}>
+              <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <View style={{ flex: 1, justifyContent: 'center' }}>
+                  <SignInForm
+                    onSubmit={handleSignInComplete}
+                    onSwitchToSignUp={() => setCurrentStep('sign-up')}
+                  />
+                </View>
+              </TouchableWithoutFeedback>
+            </ScrollView>
+          </KeyboardAvoidingView>
         );
       case 'final-welcome':
         return <FinalWelcomeScreen onStart={onComplete} />;
@@ -271,9 +333,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   formContainer: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
+    minHeight: '100%',
   },
 });

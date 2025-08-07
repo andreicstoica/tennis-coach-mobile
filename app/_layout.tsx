@@ -1,14 +1,16 @@
 import '~/global.css';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { AppStateStorage } from '@/lib/app-state-storage';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { TRPCClientProvider } from '@/lib/trpc/trpc';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import * as Linking from 'expo-linking';
-import { router, Stack } from 'expo-router';
+import { router, Stack, usePathname, useRootNavigationState, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { AppState } from 'react-native';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -20,11 +22,26 @@ export {
 
 function NavigationWrapper() {
   const { user, isLoading } = useAuth();
+  const hasRestoredState = useRef(false);
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && !hasRestoredState.current) {
+      hasRestoredState.current = true;
+
       if (user) {
-        router.replace('/(tabs)');
+        // Try to restore last route
+        AppStateStorage.getLastRoute().then((lastRoute) => {
+          if (lastRoute && lastRoute !== '/auth') {
+            console.log('🔄 Restoring route:', lastRoute);
+            router.replace(lastRoute as any);
+          } else {
+            // Default to tabs if no saved route
+            const currentPath = router.canGoBack() ? null : '/(tabs)';
+            if (currentPath) {
+              router.replace(currentPath);
+            }
+          }
+        });
       } else {
         router.replace('/auth');
       }
@@ -32,7 +49,7 @@ function NavigationWrapper() {
   }, [isLoading, user]);
 
   if (isLoading) {
-    return null; // or a loading screen
+    return null;
   }
 
   return (
@@ -45,8 +62,40 @@ function NavigationWrapper() {
   );
 }
 
+// Component to handle route tracking
+function RouteTracker() {
+  const { user } = useAuth();
+  const pathname = usePathname();
+  const segments = useSegments();
+
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'background' && user) {
+        // Save current route when app goes to background
+        try {
+          console.log('📱 App going to background, pathname:', pathname, 'segments:', segments);
+
+          // Use pathname directly as it gives us the current route
+          if (pathname && pathname !== '/auth') {
+            console.log('💾 Saving route:', pathname);
+            AppStateStorage.saveRoute(pathname);
+          }
+        } catch (error) {
+          console.error('Failed to save route:', error);
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription?.remove();
+  }, [user, pathname, segments]);
+
+  return null; // This component doesn't render anything
+}
+
 export default function RootLayout() {
   const { isDarkColorScheme } = useColorScheme();
+  const navigationState = useRootNavigationState();
   const [fontsLoaded] = useFonts({
     IBMPlexSans: require('../assets/fonts/IBMPlexSansRegular.ttf'),
     'IBMPlexSans-Medium': require('../assets/fonts/IBMPlexSansMedium.ttf'),
@@ -55,10 +104,10 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (fontsLoaded) {
+    if (fontsLoaded && navigationState?.key) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, navigationState?.key]);
 
   useEffect(() => {
     // Handle deep links for OAuth callbacks
@@ -89,7 +138,7 @@ export default function RootLayout() {
     };
   }, []);
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded || !navigationState?.key) {
     return null;
   }
 
@@ -97,6 +146,7 @@ export default function RootLayout() {
     <AuthProvider>
       <TRPCClientProvider>
         <ThemeProvider value={isDarkColorScheme ? DarkTheme : DefaultTheme}>
+          <RouteTracker />
           <NavigationWrapper />
         </ThemeProvider>
       </TRPCClientProvider>

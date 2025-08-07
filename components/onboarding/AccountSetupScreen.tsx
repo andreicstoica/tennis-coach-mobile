@@ -1,4 +1,5 @@
 import { useColorScheme } from '@/hooks/useColorScheme';
+import * as Haptics from 'expo-haptics';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { OnboardingScreen } from '../OnboardingScreen';
@@ -22,9 +23,19 @@ export function AccountSetupScreen({
 }: AccountSetupScreenProps) {
   const { colorScheme } = useColorScheme();
 
+  const handleSignUp = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onSignUp();
+  };
+
+  const handleSignIn = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onSignIn();
+  };
+
   return (
     <OnboardingScreen
-      title="Ready to Elevate Your Game?"
+      title="Elevate Your Game"
       subtitle="Sign up or log in to save your progress and access your personalized practice plans."
       buttonText=""
       onButtonPress={() => {}}
@@ -35,7 +46,7 @@ export function AccountSetupScreen({
       totalSteps={totalSteps}
       hideMainButton={true}>
       <View style={styles.buttonsContainer}>
-        <Button onPress={onSignUp} style={styles.primaryButton} className="mb-4 w-full">
+        <Button onPress={handleSignUp} style={styles.primaryButton} className="mb-4 w-full">
           <ThemedText lightColor="#ffffff" darkColor="#ffffff" style={styles.primaryButtonText}>
             Sign Up
           </ThemedText>
@@ -43,7 +54,7 @@ export function AccountSetupScreen({
 
         <Button
           variant="outline"
-          onPress={onSignIn}
+          onPress={handleSignIn}
           style={[
             styles.secondaryButton,
             { borderColor: colorScheme === 'dark' ? '#ffffff' : '#000000' },

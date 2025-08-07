@@ -1,5 +1,6 @@
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { authClient } from '@/lib/auth-client';
+import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import { TextInput, TouchableOpacity, View } from 'react-native';
 import { z } from 'zod';
@@ -45,6 +46,7 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
     const result = signUpSchema.safeParse({ name, email, password, confirmPassword });
 
     if (!result.success) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       const fieldErrors: {
         name?: string;
         email?: string;
@@ -65,9 +67,9 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
     setIsSigningUp(true);
 
     try {
-      // Let the auth context handle the signup
       await onSubmit(name, email, password);
     } catch (error) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       console.error('Sign up error:', error);
       setErrors({
         email: 'Failed to create account. Please try again.',
@@ -78,6 +80,7 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
   };
 
   const handleGoogleSignUp = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsGoogleSigningUp(true);
 
     try {
@@ -87,6 +90,7 @@ export function SignUpForm({ onSubmit, isLoading = false, onSwitchToSignIn }: Si
       });
       console.log('Google sign up successful');
     } catch (error) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       console.error('Google sign up error:', error);
       setErrors({
         email: 'Google sign-up failed. Please try again.',

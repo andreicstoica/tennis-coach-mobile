@@ -297,26 +297,6 @@ export default function PreviousScreen() {
             </ThemedText>
           </ThemedView>
 
-          {/* Loading indicator */}
-          {refreshing && (
-            <Animated.View
-              style={[
-                styles.loadingContainer,
-                {
-                  opacity: fadeAnim,
-                  backgroundColor:
-                    colorScheme === 'dark' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(0, 122, 255, 0.1)',
-                  borderColor:
-                    colorScheme === 'dark' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(0, 122, 255, 0.2)',
-                },
-              ]}>
-              <ActivityIndicator size="small" color="#007AFF" style={styles.loadingSpinner} />
-              <ThemedText lightColor="#007AFF" darkColor="#3b82f6" style={styles.loadingText}>
-                Refreshing sessions...
-              </ThemedText>
-            </Animated.View>
-          )}
-
           {/* Year Filter */}
           {years.length > 0 && (
             <ThemedView style={styles.filterSection}>
@@ -752,24 +732,6 @@ const styles = StyleSheet.create({
     // Remove color - handled by ThemedText
     opacity: 0.95,
     marginBottom: 4,
-  },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    marginBottom: 16,
-    // Remove backgroundColor and borderColor - handled dynamically
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  loadingSpinner: {
-    marginRight: 8,
-  },
-  loadingText: {
-    fontSize: 14,
-    // Remove color - handled by ThemedText
-    fontWeight: '500',
   },
   topLoader: {
     position: 'absolute',

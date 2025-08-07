@@ -259,7 +259,7 @@ export default function ProfileScreen() {
           style={styles.scrollView}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingTop: insets.top + 16, paddingBottom: bottomTabBarHeight + insets.bottom + 32 },
+            { paddingTop: insets.top + 16, paddingBottom: bottomTabBarHeight + insets.bottom + 8 },
           ]}
           onScroll={handleScroll}
           scrollEventThrottle={16}
@@ -392,7 +392,7 @@ const badgeSize = (width - 60) / 2; // Increased gap between cards (was 48)
 const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
-    marginBottom: 48,
+    marginBottom: 8, // Reduced from 16 to 8
   },
   scrollContent: {
     marginTop: 16,
@@ -453,8 +453,8 @@ const styles = StyleSheet.create({
   badgeCard: {
     width: badgeSize,
     alignItems: 'center',
-    marginBottom: 32, // Increased from 24
-    padding: 8, // Reduced from 12
+    marginBottom: 4,
+    padding: 8,
     backgroundColor: 'transparent',
     borderRadius: 16,
     borderWidth: 1,
@@ -558,7 +558,7 @@ const styles = StyleSheet.create({
   signOutButton: {
     width: '100%',
     marginTop: 4,
-    marginBottom: 36,
+    marginBottom: 0, // Reduced from 4 to 0
     alignSelf: 'center',
   },
   signOutText: {

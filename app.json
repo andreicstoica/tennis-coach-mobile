@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "tennis-coach-mobile",
-    "slug": "tennis-coach-mobile",
+    "name": "Courtly",
+    "slug": "courtly",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "tenniscoachmobile",
+    "scheme": "courtly",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.andreistoica.tenniscoachmobile",
+      "bundleIdentifier": "com.andreistoica.courtly",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -21,7 +21,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.andreistoica.tenniscoachmobile"
+      "package": "com.andreistoica.courtly"
     },
     "web": {
       "bundler": "metro",
@@ -54,10 +54,15 @@
       "expo-asset"
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "tsconfigPaths": true
     },
     "extra": {
-      "router": {},
+      "router": {
+        "unstable_settings": {
+          "initialRouteName": "(tabs)"
+        }
+      },
       "eas": {
         "projectId": "461d1675-feb2-49c1-b15c-195467e9367c"
       }

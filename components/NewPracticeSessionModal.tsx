@@ -1,9 +1,10 @@
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { authClient } from '@/lib/auth-client';
 import * as Haptics from 'expo-haptics';
+import * as KeepAwake from 'expo-keep-awake';
 import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { ActivityIndicator, Modal, View } from 'react-native';
+import { ActivityIndicator, Modal, TouchableWithoutFeedback, View } from 'react-native';
 import { ThemedText } from './ThemedText';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -27,6 +28,10 @@ export default function NewPracticeSessionModal({
 
   const router = useRouter();
   const colorScheme = useColorScheme();
+
+  // Track active request to prevent duplicates
+  const activeRequestRef = React.useRef<AbortController | null>(null);
+  const lastRequestTimeRef = React.useRef<number>(0);
 
   useEffect(() => {
     const getLocation = async () => {
@@ -56,8 +61,29 @@ export default function NewPracticeSessionModal({
       return;
     }
 
+    // Prevent duplicate requests within 2 seconds
+    const now = Date.now();
+    if (now - lastRequestTimeRef.current < 2000) {
+      console.log('⏰ Preventing duplicate request (too soon)');
+      return;
+    }
+    lastRequestTimeRef.current = now;
+
+    // Cancel any existing request
+    if (activeRequestRef.current) {
+      console.log('🛑 Cancelling previous request');
+      activeRequestRef.current.abort();
+    }
+
+    // Create new abort controller for this request
+    const abortController = new AbortController();
+    activeRequestRef.current = abortController;
+
     setLoading(true);
     setError('');
+
+    // Prevent screen from sleeping during generation
+    KeepAwake.activateKeepAwakeAsync();
 
     try {
       // Step 1: Create practice session using exact format from [id].tsx
@@ -85,6 +111,7 @@ export default function NewPracticeSessionModal({
         method: 'POST',
         headers,
         body: JSON.stringify(inputData),
+        signal: abortController.signal,
       });
 
       console.log('📊 Practice session response status:', response.status);
@@ -129,6 +156,7 @@ export default function NewPracticeSessionModal({
               method: 'POST',
               headers,
               body: JSON.stringify(badgeInputData),
+              signal: abortController.signal,
             });
 
             console.log('📊 Badge response status:', badgeResponse.status);
@@ -165,6 +193,7 @@ export default function NewPracticeSessionModal({
         method: 'POST',
         headers,
         body: JSON.stringify(chatInputData),
+        signal: abortController.signal,
       });
 
       console.log('📊 Chat response status:', chatResponse.status);
@@ -208,6 +237,12 @@ export default function NewPracticeSessionModal({
       console.error('💥 Error in practice session creation flow:', err);
       const error = err as Error;
 
+      // Handle aborted requests (don't show error to user)
+      if (error.name === 'AbortError') {
+        console.log('🛑 Request was cancelled');
+        return;
+      }
+
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
 
       // Provide user-friendly error messages
@@ -223,12 +258,28 @@ export default function NewPracticeSessionModal({
         setError(error.message || 'Something went wrong. Please try again.');
       }
     } finally {
+      // Clear the active request reference
+      if (activeRequestRef.current === abortController) {
+        activeRequestRef.current = null;
+      }
+
       setLoading(false);
+      // Re-allow screen to sleep
+      KeepAwake.deactivateKeepAwake();
     }
   };
 
   const handleClose = () => {
-    if (loading) return; // Prevent closing during API calls
+    if (loading) {
+      // Cancel active request if modal is being closed during loading
+      if (activeRequestRef.current) {
+        console.log('🛑 Cancelling request due to modal close');
+        activeRequestRef.current.abort();
+        activeRequestRef.current = null;
+      }
+      setLoading(false);
+      KeepAwake.deactivateKeepAwake();
+    }
 
     // Clear form state when closing
     setFocus('');
@@ -236,71 +287,85 @@ export default function NewPracticeSessionModal({
     onClose();
   };
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (activeRequestRef.current) {
+        console.log('🧹 Cleaning up active request on unmount');
+        activeRequestRef.current.abort();
+      }
+    };
+  }, []);
+
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={handleClose}>
-      <View
-        style={{
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-          backgroundColor: colorScheme.isDarkColorScheme
-            ? 'rgba(255,255,255,0.1)'
-            : 'rgba(0,0,0,0.3)',
-        }}>
+      <TouchableWithoutFeedback onPress={handleClose}>
         <View
           style={{
-            backgroundColor: colorScheme.isDarkColorScheme ? '#1a1a1a' : '#fff',
-            padding: 24,
-            borderRadius: 12,
-            width: 320,
-            maxWidth: '90%',
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: colorScheme.isDarkColorScheme
+              ? 'rgba(255,255,255,0.1)'
+              : 'rgba(0,0,0,0.3)',
           }}>
-          <ThemedText
-            lightColor="#000000"
-            darkColor="#ffffff"
-            type="subtitle"
-            style={{ marginBottom: 12 }}>
-            New Practice Session
-          </ThemedText>
+          <TouchableWithoutFeedback onPress={() => {}}>
+            <View
+              style={{
+                backgroundColor: colorScheme.isDarkColorScheme ? '#1a1a1a' : '#fff',
+                padding: 24,
+                borderRadius: 12,
+                width: 320,
+                maxWidth: '90%',
+              }}>
+              <ThemedText
+                lightColor="#000000"
+                darkColor="#ffffff"
+                type="subtitle"
+                style={{ marginBottom: 12 }}>
+                New Practice Session
+              </ThemedText>
 
-          <Input
-            placeholder="What's the focus?"
-            value={focus}
-            onChangeText={setFocus}
-            editable={!loading}
-            autoFocus
-            style={{ marginBottom: 12 }}
-            maxLength={200}
-          />
+              <Input
+                placeholder="What's the focus?"
+                value={focus}
+                onChangeText={setFocus}
+                editable={!loading}
+                autoFocus
+                style={{ marginBottom: 12 }}
+                maxLength={200}
+              />
 
-          {error ? (
-            <ThemedText
-              lightColor="#dc2626"
-              darkColor="#f87171"
-              style={{ marginBottom: 12, fontSize: 14 }}>
-              {error}
-            </ThemedText>
-          ) : null}
+              {error ? (
+                <ThemedText
+                  lightColor="#dc2626"
+                  darkColor="#f87171"
+                  style={{ marginBottom: 12, fontSize: 14 }}>
+                  {error}
+                </ThemedText>
+              ) : null}
 
-          <Button onPress={handleCreate} disabled={loading || !focus.trim()}>
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <ThemedText style={{ color: 'white' }}>Create</ThemedText>
-            )}
-          </Button>
+              <Button onPress={handleCreate} disabled={loading || !focus.trim()}>
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <ThemedText style={{ color: 'white' }}>Create</ThemedText>
+                )}
+              </Button>
 
-          <Button
-            variant="outline"
-            onPress={handleClose}
-            style={{ marginTop: 8 }}
-            disabled={loading}>
-            <ThemedText lightColor="#000000" darkColor="#ffffff">
-              Cancel
-            </ThemedText>
-          </Button>
+              <Button
+                variant="outline"
+                onPress={handleClose}
+                style={{ marginTop: 8 }}
+                disabled={loading}>
+                <ThemedText lightColor="#000000" darkColor="#ffffff">
+                  Cancel
+                </ThemedText>
+              </Button>
+            </View>
+          </TouchableWithoutFeedback>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 }
