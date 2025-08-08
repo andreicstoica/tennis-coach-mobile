@@ -16,3 +16,10 @@ export const NAV_THEME = {
         text: 'hsl(0 0% 98%)', // foreground
     },
 };
+
+export const FONTS = {
+    primary: 'IBMPlexSans',
+    medium: 'IBMPlexSans-Medium',
+    semiBold: 'IBMPlexSans-SemiBold',
+    bold: 'IBMPlexSans-Bold',
+} as const;

@@ -1,22 +1,27 @@
 {
   "expo": {
-    "name": "tennis-coach-mobile",
-    "slug": "tennis-coach-mobile",
+    "name": "Courtly",
+    "slug": "courtly",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "tenniscoachmobile",
+    "scheme": "courtly",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.andreistoica.courtly",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.andreistoica.courtly"
     },
     "web": {
       "bundler": "metro",
@@ -24,7 +29,19 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+        }
+      ],
       "expo-router",
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": true
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -33,10 +50,22 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "tsconfigPaths": true
+    },
+    "extra": {
+      "router": {
+        "unstable_settings": {
+          "initialRouteName": "(tabs)"
+        }
+      },
+      "eas": {
+        "projectId": "461d1675-feb2-49c1-b15c-195467e9367c"
+      }
     }
   }
 }
